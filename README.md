@@ -5,7 +5,7 @@ Neural network from scratch, implemented with numpy and a lot of patience with c
 Performance of a [784,128,128,10] network for MNIST classification with 0.5 learning rate(I have no patience I know) is at 
 97% for validation accuracy and 96% for training data accuracy(which means regularization has been properly implemented as it has generalized)
 
-The start of the program
+The start of the program execution
 ```
       _---~~(~~-_.
     _{        )   )
@@ -30,22 +30,5 @@ Epoch:300,Cost:0.2995063853680104, Accuracy:91.39333333333333
 Validation Cost:0.16883666002554917, Validation Accuracy:95.05
 	Epoch:400,Cost:0.2639805195222709, Accuracy:92.41333333333334
 Validation Cost:0.14901901587825286, Validation Accuracy:95.69
-
-```
-
-And finally the Logo for the project!
-
-```
-      _---~~(~~-_.
-    _{        )   )
-  ,   ) -~~- ( ,-' )_
- (  `-,_..`., )-- '_,)
-( ` _)  (  -~( -_ `,  }     BIG BRAIN MACHINE BY ANDRÉ PÁSCOA
-
-(_-  _  ~_-~~~~`,  ,' )
-  `~ -^(    __;-,((()))
-        ~~~~ {_ -_(())
-               `\  }
-                 { } 
 
 ```
