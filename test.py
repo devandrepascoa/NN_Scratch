@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from PIL import Image, ImageOps
+import neural
 from neural.neuralnet import *
 
 (x_train, y_train), (x_test, y_test) = loadMnist()
@@ -20,6 +21,7 @@ print("""
   ,   ) -~~- ( ,-' )_
  (  `-,_..`., )-- '_,)
 ( ` _)  (  -~( -_ `,  }     BIG BRAIN MACHINE BY ANDRÉ PÁSCOA
+
 (_-  _  ~_-~~~~`,  ,' )
   `~ -^(    __;-,((()))
         ~~~~ {_ -_(())
@@ -28,7 +30,7 @@ print("""
 """)
 
 nn = NN((x_train, y_train), val_dataset=(x_test, y_test), epochs=10000, shape=[784, 30, 10],
-        learning_rate=0.1,
+        learning_rate=0.5,
         enable_dropout=True)
 nn.save()
 
