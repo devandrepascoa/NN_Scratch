@@ -29,8 +29,8 @@ print("""
                  { } 
 """)
 
-nn = NN((x_train, y_train), val_dataset=(x_test, y_test), epochs=10000, shape=[784, 30, 10],
-        learning_rate=0.5,
+nn = NN((x_train, y_train), val_dataset=(x_test, y_test), epochs=10000, shape=[784, 512, 10],
+        learning_rate=0.01, mini_batch_size=1000,
         enable_dropout=True)
 nn.save()
 
