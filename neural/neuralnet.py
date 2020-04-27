@@ -71,7 +71,7 @@ class MathUtils():
         return x_exp / x_sum
 
     @staticmethod
-    def hotOne(array, output_size):
+    def hotOne(array, output_size): #Creates a hot One array from single digit
         assert len(array.shape) == 2, "Input has to have shape (data,data_size)"
         Y_orig = array
         Y = np.zeros((output_size, Y_orig.shape[-1]))
@@ -95,7 +95,7 @@ class MathUtils():
     def cross_entropy_deriv(A, Y):
         return -(Y / A) + (1 + Y) / (1 + A)
 
-    @staticmethod  # normalize para dados do tipo (data,number_samples)
+    @staticmethod  # normalize for dados of type (data,number_samples)
     def normalize(data):
         data = data - MathUtils.media(data)
         constant = MathUtils.media((data ** 2))
@@ -109,7 +109,9 @@ class MathUtils():
 
 # TODO
 # Improve oop architecture !! high priority
-# Add regularization in the form of L2 regularization and inverse dropout
+# Fix gradients(0.3 dif)
+# Work on other activation functions and optimizers
+# Apply Mini batches
 class NN(object):
     # Function to initialize our parameters( Weights and biases)
     def init_params(self, S):
@@ -123,7 +125,7 @@ class NN(object):
     # Function to do a full forward propagation with the current parameters
     def forward_propagate(self, X, params, S, train_mode):
         cache = {}
-        # First layer(not the input)
+        #First Layer
         cache["Z1"] = np.dot(params["W1"], X) + params["B1"]
         cache["A1"] = MathUtils.relu(cache["Z1"])
         if train_mode and self.enable_dropout:
@@ -133,28 +135,30 @@ class NN(object):
             cache["Z" + str(i)] = np.dot(params["W" + str(i)],
                                          cache["A" + str(i - 1)]) + params["B" + str(i)]
             cache["A" + str(i)] = MathUtils.relu(cache["Z" + str(i)])
-            if train_mode and self.enable_dropout:
-                self.dropout_fwd(cache, str(i), 0.5)
+            if train_mode and self.enable_dropout: #Dropping 50% of neurons if in training mode and dropout mode
+                self.dropout_fwd(cache, str(i), 0.5) 
 
         # Output layer
         cache["Z" + str(len(S) - 1)] = np.dot(params["W" + str(len(S) - 1)],
                                               cache["A" + str(len(S) - 2)]) + params["B" + str(len(S) - 1)]
-        cache["A" + str(len(S) - 1)] = MathUtils.softmax(cache["Z" + str(len(S) - 1)])
+        cache["A" + str(len(S) - 1)] = MathUtils.softmax(cache["Z" + str(len(S) - 1)]) 
         return cache
 
     # Back propagation using Gradient descent
     def back_propagate(self, X, Y, cache, parameters, S):
         gradients = {}
-        M = Y.shape[1]
+        M = Y.shape[1] #Number of training examples
+        #Gradients for activations and before applying activations
         gradients["dz" + str(len(S) - 1)] = (cache["A" + str(len(S) - 1)] - Y) / M
         for i in range(2, len(S)):
             gradients["da" + str(len(S) - i)] = np.dot(parameters["W" + str(len(S) - i + 1)].T,
                                                        gradients["dz" + str(len(S) - i + 1)])
             if self.enable_dropout:
-                self.dropout_bw(cache, gradients, str(len(S) - i), 0.5)
+                self.dropout_bw(cache, gradients, str(len(S) - i), 0.5) #Dropping out 50% of the neurons
             gradients["dz" + str(len(S) - i)] = gradients["da" + str(len(S) - i)] * MathUtils.relu_deriv(
                 cache["Z" + str(len(S) - i)])
 
+        #Gradients for weights and biases
         gradients["dw1"] = np.dot(gradients["dz1"], X.T)  # dot devido a ser a soma remember my dude produto escalar
         gradients["db1"] = np.sum(gradients["dz1"], axis=1, keepdims=True)
         for i in range(2, len(S)):
@@ -180,6 +184,7 @@ class NN(object):
                 sum += 1
         return (sum / m) * 100.0
 
+    #Function to evaluate the neural network on a certain dataset
     def evaluate(self, dataset):
         (X, Y) = dataset
         cache = self.forward_propagate(X, self.params, self.S, False)
@@ -187,7 +192,8 @@ class NN(object):
         accuracy = self.get_accuracy(cache["A" + str(len(self.S) - 1)], Y)
         return {"cache": cache, "cost": cost, "accuracy": accuracy}
 
-    # (784, 1) <--input data shape
+    # (784, 1) <--input data shape in case of mnist
+    #Function to predict for a single input
     def predict(self, input_data):
         assert input_data.shape == (self.S[0], 1)
         X = input_data
@@ -204,11 +210,13 @@ class NN(object):
         assert len(dataset[0].shape) == 2 and len(dataset[1].shape) == 2, (
                 name + " data has to be of shape (data_size,data) and labels (label_size,label)")
 
+    #Function to save the neural network object(Will add only weights and biases in future)
     def save(self, path="neural_network"):
         outfile = open(path, 'wb')
         pickle.dump(self, outfile)
         outfile.close()
 
+    #Function to load a neural network object
     @staticmethod
     def load(path="neural_network"):
         infile = open(path, 'rb')
@@ -216,6 +224,7 @@ class NN(object):
         infile.close()
         return nn
 
+    #function to apply gradient checking algorithm to assert that the gradient are correct
     def gradient_check(self, parameters, gradients, X, Y, epsilon=1e-7):
         grad_approx = []
         grad = np.array([])
@@ -249,8 +258,8 @@ class NN(object):
                 grad_approx.append((J_Plus - J_Minus) / (2 * epsilon))
 
         grad_approx = np.array(grad_approx).reshape(-1, 1)
-        # Comparing values for debugging
-        # for i in range(0, grad.shape[0]):
+        #Comparing values for debugging
+        #for i in range(0, grad.shape[0]):
         #    print("Value: {}, Real value: {}".format(grad[i], grad_approx[i]))
 
         # Calculating relative error
@@ -283,12 +292,15 @@ class NN(object):
     # [input_size,hidden_layers,output_size] <--shape list shape ex:[784,128,128,10] for mnist
     def __init__(self, dataset, val_dataset=None, epochs=2000, learning_rate=0.5, shape=None,
                  print_costs=True,
-                 early_stopping=True, enable_dropout=True):
+                 early_stopping=True, enable_dropout=True,check_grads=False):
         self.enable_dropout = enable_dropout
+
         # Validations
         NN.validate_dataset(dataset, "Data set")
         if val_dataset is not None:
             NN.validate_dataset(val_dataset, "Validation set")
+        
+        assert not(check_grads and enable_dropout), ("Gradient checking and Dropout regularization cannot be both enabled at the same time.")
 
         (X, Y) = dataset
         assert len(X.shape) == 2
@@ -311,12 +323,14 @@ class NN(object):
         previous_accuracy = 0
         previous_val_accuracy = 0
 
+        #Adding mini batch in near future
         for i in range(0, epochs):
             cache = self.forward_propagate(X, self.params, self.S, True)
             cost = MathUtils.cross_entropy(cache["A" + str(len(self.S) - 1)], Y)
             accuracy = self.get_accuracy(cache["A" + str(len(self.S) - 1)], Y)
             grads = self.back_propagate(X, Y, cache, self.params, self.S)
-            #self.gradient_check(self.params, grads, X, Y)
+            if(check_grads):
+                self.gradient_check(self.params, grads, X, Y)
             self.learn(grads, self.params, learning_rate, self.S)
 
             if i % 100 == 0:
@@ -327,6 +341,7 @@ class NN(object):
                         cost_test = MathUtils.cross_entropy(cache_test["A" + str(len(self.S) - 1)], Y_test)
                         accuracy_test = self.get_accuracy(cache_test["A" + str(len(self.S) - 1)], Y_test)
                         print("Validation Cost:{}, Validation Accuracy:{}".format(cost_test, accuracy_test))
+            #Early stopping "callback", will add proper callbacks in the future
             if early_stopping:
                 previous_accuracy = accuracy
                 if val_dataset is not None:
