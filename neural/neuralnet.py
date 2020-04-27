@@ -230,7 +230,7 @@ class NN(object):
         grad = np.array([])
         count = 0
         # Preparing necessary analytic gradient values (only require dW and dB)
-        for i in gradients.keys():
+        for i in gradients.keys(): #Adding every weight and bias (activations and outputs excluded)
             if i.startswith("dw") or i.startswith("db"):
                 new_vector = np.reshape(gradients[i], (-1, 1))
                 if count == 0:
@@ -238,25 +238,25 @@ class NN(object):
                 else:
                     grad = np.concatenate((grad, new_vector), axis=0)
                 count = count + 1
-        grad = np.array(grad)
+        grad = np.array(grad) #Array of gradients to compare to approximated gradients
 
         # Building the numerical gradient approximations
         for i in parameters.keys():
             for idx in np.ndindex(parameters[i].shape):
-                thetaplus = parameters[i][idx] + epsilon
+                thetaplus = parameters[i][idx] + epsilon #calculating theta plus for each parameter
                 modified_params = parameters.copy()
                 modified_params[i][idx] = thetaplus
-                cache = self.forward_propagate(X, modified_params, self.S, True)
+                cache = self.forward_propagate(X, modified_params, self.S, True) #testing network based on modified params
                 J_Plus = MathUtils.cross_entropy(cache["A" + str(len(self.S) - 1)], Y)
 
-                thetaminus = parameters[i][idx] - epsilon
-                modified_params = parameters.copy()
+                thetaminus = parameters[i][idx] - epsilon 
+                modified_params = parameters.copy() 
                 modified_params[i][idx] = thetaminus
                 cache = self.forward_propagate(X, modified_params, self.S, True)
                 J_Minus = MathUtils.cross_entropy(cache["A" + str(len(self.S) - 1)], Y)
-
+                #Adding the approximation to a list
                 grad_approx.append((J_Plus - J_Minus) / (2 * epsilon))
-
+        
         grad_approx = np.array(grad_approx).reshape(-1, 1)
         #Comparing values for debugging
         #for i in range(0, grad.shape[0]):
@@ -266,7 +266,7 @@ class NN(object):
         numerator = np.linalg.norm(grad - grad_approx)  # Step 1'
         denominator = np.linalg.norm(grad) + np.linalg.norm(grad_approx)  # Step 2'
         difference = numerator / denominator  # Step 3'
-
+        
         if difference > 2e-7:
             print("\033[93m" + "There is a mistake in the backward propagation! difference = " + str(
                 difference) + "\033[0m")
