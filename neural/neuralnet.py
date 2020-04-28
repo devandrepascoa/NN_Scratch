@@ -116,24 +116,27 @@ class MathUtils():
 # Apply Mini batches
 class NN(object):
     # Function to initialize our parameters( Weights and biases)
-    def init_params(self, S):
+
+    def init_params(self):
         parameters = {}
-        for i in range(1, len(S)):
+        length = len(self.S)  # neural network length
+        for i in range(1, length):
             # (np.sqrt(2 / S[i - 1])) important for weight initialization, using He initialization(NOT Xavier)
-            parameters["W" + str(i)] = np.random.randn(S[i], S[i - 1]) * (np.sqrt(2 / S[i - 1]))
-            parameters["B" + str(i)] = np.zeros((S[i], 1))  # bias can be started with zero, doesn't affect much
+            parameters["W" + str(i)] = np.random.randn(self.S[i], self.S[i - 1]) * (np.sqrt(2 / self.S[i - 1]))
+            parameters["B" + str(i)] = np.zeros((self.S[i], 1))  # bias can be started with zero, doesn't affect much
         return parameters
 
     # Function to do a full forward propagation with the current parameters
-    def forward_propagate(self, X, params, S, train_mode):
+    def forward_propagate(self, X, Y, params, train_mode):
         cache = {}
+        length = len(self.S)  # neural network length
         # First Layer
         cache["Z1"] = np.dot(params["W1"], X) + params["B1"]
         cache["A1"] = MathUtils.relu(cache["Z1"])
         if train_mode and self.enable_dropout:
             self.dropout_fwd(cache, "1", 0.5)
 
-        for i in range(2, len(S) - 1):
+        for i in range(2, length - 1):
             cache["Z" + str(i)] = np.dot(params["W" + str(i)],
                                          cache["A" + str(i - 1)]) + params["B" + str(i)]
             cache["A" + str(i)] = MathUtils.relu(cache["Z" + str(i)])
@@ -141,37 +144,44 @@ class NN(object):
                 self.dropout_fwd(cache, str(i), 0.5)
 
         # Output layer
-        cache["Z" + str(len(S) - 1)] = np.dot(params["W" + str(len(S) - 1)],
-                                              cache["A" + str(len(S) - 2)]) + params["B" + str(len(S) - 1)]
-        cache["A" + str(len(S) - 1)] = MathUtils.softmax(cache["Z" + str(len(S) - 1)])
+        cache["Z" + str(length - 1)] = np.dot(params["W" + str(length - 1)],
+                                              cache["A" + str(length - 2)]) + params["B" + str(length - 1)]
+        cache["A" + str(length - 1)] = MathUtils.softmax(cache["Z" + str(length - 1)])
+        Yhat = cache["A" + str(length - 1)]
+        cache["cost"] = MathUtils.cross_entropy(Yhat, Y)
+        cache["accuracy"] = self.get_accuracy(Yhat, Y)
         return cache
 
     # Back propagation using Gradient descent
-    def back_propagate(self, X, Y, cache, parameters, S):
+    def back_propagate(self, X, Y, cache, parameters):
         gradients = {}
+        length = len(self.S)  # neural network length
         M = Y.shape[1]  # Number of training examples
         # Gradients for activations and before applying activations
-        gradients["dz" + str(len(S) - 1)] = (cache["A" + str(len(S) - 1)] - Y) / M
-        for i in range(2, len(S)):
-            gradients["da" + str(len(S) - i)] = np.dot(parameters["W" + str(len(S) - i + 1)].T,
-                                                       gradients["dz" + str(len(S) - i + 1)])
+        Yhat = cache["A" + str(length - 1)]  # Predicted Output
+        gradients["dz" + str(length - 1)] = (Yhat - Y)
+        for i in range(2, length):
+            gradients["da" + str(length - i)] = np.dot(parameters["W" + str(length - i + 1)].T,
+                                                       gradients["dz" + str(length - i + 1)])
             if self.enable_dropout:
-                self.dropout_bw(cache, gradients, str(len(S) - i), 0.5)  # Dropping out 50% of the neurons
-            gradients["dz" + str(len(S) - i)] = gradients["da" + str(len(S) - i)] * MathUtils.relu_deriv(
-                cache["Z" + str(len(S) - i)])
+                self.dropout_bw(cache, gradients, str(length - i), 0.5)  # Dropping out 50% of the neurons
+            gradients["dz" + str(length - i)] = gradients["da" + str(length - i)] * MathUtils.relu_deriv(
+                cache["Z" + str(length - i)])
 
         # Gradients for weights and biases
-        gradients["dw1"] = np.dot(gradients["dz1"], X.T)  # dot devido a ser a soma remember my dude produto escalar
-        gradients["db1"] = np.sum(gradients["dz1"], axis=1, keepdims=True)
-        for i in range(2, len(S)):
-            gradients["dw" + str(i)] = np.dot(gradients["dz" + str(i)], cache["A" + str(i - 1)].T)
-            gradients["db" + str(i)] = np.sum(gradients["dz" + str(i)], axis=1, keepdims=True)
+        gradients["dw1"] = (1 / M) * np.dot(gradients["dz1"],
+                                            X.T)  # dot devido a ser a soma remember my dude produto escalar
+        gradients["db1"] = (1 / M) * np.sum(gradients["dz1"], axis=1, keepdims=True)
+        for i in range(2, length):
+            gradients["dw" + str(i)] = (1 / M) * np.dot(gradients["dz" + str(i)], cache["A" + str(i - 1)].T)
+            gradients["db" + str(i)] = (1 / M) * np.sum(gradients["dz" + str(i)], axis=1, keepdims=True)
 
         return gradients
 
     # Function to adjust our weights and biases(parameters) based on the respective gradient and learning rate
-    def learn(self, gradients, parameters, learning_rate, network_dims):
-        for i in range(1, len(network_dims)):
+    def gradient_descent(self, gradients, parameters, learning_rate):
+        length = len(self.S)  # neural network length
+        for i in range(1, length):
             parameters["W" + str(i)] -= learning_rate * gradients["dw" + str(i)]
             parameters["B" + str(i)] -= learning_rate * gradients["db" + str(i)]
 
@@ -226,6 +236,15 @@ class NN(object):
         infile.close()
         return nn
 
+    def calculate_batches(self, X, Y, mini_batch_size, shuffle=False):
+        M = X.shape[1]  # Number of training examples
+        X = np.array([X[:, k:k + mini_batch_size]
+                      for k in range(0, M, mini_batch_size)])
+
+        Y = np.array([Y[:, k:k + mini_batch_size]
+                      for k in range(0, M, mini_batch_size)])
+        return X, Y
+
     # function to apply gradient checking algorithm to assert that the gradient are correct
     def gradient_check(self, parameters, gradients, X, Y, epsilon=1e-7):
         grad_approx = []
@@ -248,15 +267,15 @@ class NN(object):
                 thetaplus = parameters[i][idx] + epsilon  # calculating theta plus for each parameter
                 modified_params = parameters.copy()
                 modified_params[i][idx] = thetaplus
-                cache = self.forward_propagate(X, modified_params, self.S,
-                                               True)  # testing network based on modified params
-                J_Plus = MathUtils.cross_entropy(cache["A" + str(len(self.S) - 1)], Y)
+                # testing network based on modified params
+                cache = self.forward_propagate(X,Y, modified_params, True)
+                J_Plus = cache["cost"]
 
                 thetaminus = parameters[i][idx] - epsilon
                 modified_params = parameters.copy()
                 modified_params[i][idx] = thetaminus
-                cache = self.forward_propagate(X, modified_params, self.S, True)
-                J_Minus = MathUtils.cross_entropy(cache["A" + str(len(self.S) - 1)], Y)
+                cache = self.forward_propagate(X, modified_params, True)
+                J_Minus = cache["cost"]
                 # Adding the approximation to a list
                 grad_approx.append((J_Plus - J_Minus) / (2 * epsilon))
 
@@ -318,48 +337,29 @@ class NN(object):
             self.S = shape
             assert len(self.S) > 2
             assert self.S[0] == X.shape[0] and self.S[-1] == Y.shape[0]
-        else:
+        else:  # Predefined shape
             self.S = [dataset[0].shape[0], 30, 10]
-        self.params = self.init_params(self.S)
+        self.params = self.init_params()
 
         print("Starting training, NN dimensions: {}".format(self.S))
 
-        previous_accuracy = 0
-        previous_val_accuracy = 0
         M = X.shape[1]  # Number of training examples
 
         # turning X and Y into mini batches of mini_batch_size
-        X = np.array([X[:, k:k + mini_batch_size]
-                      for k in range(0, M, mini_batch_size)])
-
-        Y = np.array([Y[:, k:k + mini_batch_size]
-                      for k in range(0, M, mini_batch_size)])
+        X, Y = self.calculate_batches(X, Y, mini_batch_size)
 
         for i in range(0, epochs):
+
             for x, y in zip(X, Y):  # For every mini batch
-                cache = self.forward_propagate(x, self.params, self.S, True)
-                cost = MathUtils.cross_entropy(cache["A" + str(len(self.S) - 1)], y)
-                accuracy = self.get_accuracy(cache["A" + str(len(self.S) - 1)], y)
-                grads = self.back_propagate(x, y, cache, self.params, self.S)
-                if (check_grads):
+                cache = self.forward_propagate(x,y, self.params, True)
+                grads = self.back_propagate(x, y, cache, self.params)
+                if check_grads:
                     self.gradient_check(self.params, grads, x, y)
-                self.learn(grads, self.params, learning_rate, self.S)
+                self.gradient_descent(grads, self.params, learning_rate)
 
             if i % 100 == 0:
                 if print_costs:
-                    print("Epoch:{},Cost:{}, Accuracy:{}".format(i, cost, accuracy))
+                    print("Epoch:{},Cost:{}, Accuracy:{}".format(i, cache["cost"], cache["accuracy"]))
                     if val_dataset is not None:
-                        cache_test = self.forward_propagate(X_test, self.params, self.S, False)
-                        cost_test = MathUtils.cross_entropy(cache_test["A" + str(len(self.S) - 1)], Y_test)
-                        accuracy_test = self.get_accuracy(cache_test["A" + str(len(self.S) - 1)], Y_test)
-                        print("Validation Cost:{}, Validation Accuracy:{}".format(cost_test, accuracy_test))
-            # Early stopping "callback", will add proper callbacks in the future
-            if early_stopping:
-                previous_accuracy = accuracy
-                if val_dataset is not None:
-                    previous_val_accuracy = accuracy_test
-                    if previous_val_accuracy > accuracy_test:
-                        break
-                else:
-                    if previous_accuracy > accuracy:
-                        break
+                        cache_test = self.forward_propagate(X_test,Y_test, self.params, False)
+                        print("Validation Cost:{}, Validation Accuracy:{}".format(cache_test["cost"], cache_test["accuracy"]))
