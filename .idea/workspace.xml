@@ -90,10 +90,10 @@
     </ignored-roots>
   </component>
   <component name="WindowStateProjectService">
-    <state x="588" y="197" width="800" height="719" key="#Plugins" timestamp="1588004170850">
+    <state x="588" y="197" width="800" height="719" key="#Plugins" timestamp="1588184597931">
       <screen x="72" y="27" width="1848" height="1053" />
     </state>
-    <state x="588" y="197" width="800" height="719" key="#Plugins/72.27.1848.1053@72.27.1848.1053" timestamp="1588004170850" />
+    <state x="588" y="197" width="800" height="719" key="#Plugins/72.27.1848.1053@72.27.1848.1053" timestamp="1588184597931" />
     <state x="467" y="205" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1587523999338">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
@@ -174,10 +174,10 @@
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state x="661" y="345" key="com.intellij.ide.util.TipDialog/0.0.1920.1040@0.0.1920.1040" timestamp="1587252194213" />
-    <state x="719" y="245" width="538" height="623" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser" timestamp="1588123490146">
+    <state x="719" y="245" width="538" height="623" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser" timestamp="1588189344574">
       <screen x="72" y="27" width="1848" height="1053" />
     </state>
-    <state x="719" y="245" width="538" height="623" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser/72.27.1848.1053@72.27.1848.1053" timestamp="1588123490146" />
+    <state x="719" y="245" width="538" height="623" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser/72.27.1848.1053@72.27.1848.1053" timestamp="1588189344574" />
     <state x="700" y="146" width="588" height="815" key="find.popup" timestamp="1587521464184">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>

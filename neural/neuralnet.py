@@ -1,4 +1,5 @@
 import json
+import math
 import pickle
 import random
 import sys
@@ -248,11 +249,23 @@ class NN(object):
 
     def calculate_batches(self, X, Y, mini_batch_size, shuffle=False):
         M = X.shape[1]  # Number of training examples
-        X = np.array([X[:, k:k + mini_batch_size]
-                      for k in range(0, M, mini_batch_size)])
-
-        Y = np.array([Y[:, k:k + mini_batch_size]
-                      for k in range(0, M, mini_batch_size)])
+        # Shuffles the dataset with synchronization (X,Y)
+        if shuffle:
+            permutation = list(np.random.permutation(M))
+            X = X[:, permutation]
+            Y = Y[:, permutation].reshape((Y.shape[0], M))
+        # Partitions the dataset into batches of size mini_batch_size
+        num_complete_batches = M // mini_batch_size
+        # Yield all complete batches(batches of exact size = mini_batch_size
+        for k in range(0, num_complete_batches):
+            mini_batch_X = X[:, k * mini_batch_size:(k + 1) * mini_batch_size]
+            mini_batch_Y = Y[:, k * mini_batch_size:(k + 1) * mini_batch_size]
+            yield mini_batch_X, mini_batch_Y
+        # In case there is one batch that is not complete yield it
+        if M % mini_batch_size != 0:
+            mini_batch_X = X[:, num_complete_batches * mini_batch_size:]
+            mini_batch_Y = Y[:, num_complete_batches * mini_batch_size:]
+            yield mini_batch_X, mini_batch_Y
         return X, Y
 
     # function to apply gradient checking algorithm to assert that the gradient are correct
@@ -329,21 +342,20 @@ class NN(object):
             assert len(self.S) > 2
 
     def iterate_nn(self, epochs, X, Y, X_test, Y_test):
-
         for i in range(0, epochs):
             cache = None
             if self.mini_batch_active:
-                for x, y in zip(X, Y):  # For every mini batch
+                for x, y in self.calculate_batches(X, Y, self.mini_batch_size):  # For every mini batch
                     cache = self.forward_propagate(x, self.params, True, y)
                     grads = self.back_propagate(x, y, cache, self.params)
                     if self.check_grads:
                         self.gradient_check(self.params, grads, x, y)
                     self.gradient_descent(grads, self.params, self.learning_rate)
             else:
-                cache = self.forward_propagate(x, self.params, True, y)
-                grads = self.back_propagate(x, y, cache, self.params)
+                cache = self.forward_propagate(X, self.params, True, Y)
+                grads = self.back_propagate(X, Y, cache, self.params)
                 if self.check_grads:
-                    self.gradient_check(self.params, grads, x, y)
+                    self.gradient_check(self.params, grads, X, Y)
                 self.gradient_descent(grads, self.params, self.learning_rate)
             if i % 100 == 0:
                 if self.print_costs:
@@ -366,6 +378,7 @@ class NN(object):
         self.save_enabled = save_enabled
         self.validate_enabled = True if val_dataset is not None else False
         self.mini_batch_active = mini_batch_active
+        self.mini_batch_size = mini_batch_size
 
         # Validations
         NN.validate_dataset(dataset, "Data set")
@@ -388,11 +401,6 @@ class NN(object):
         self.params = self.init_params()
         print("Starting training, NN dimensions: {}".format(self.S))
 
-        M = X.shape[1]  # Number of training examples
-
-        # turning X and Y into mini batches of mini_batch_size
-        if mini_batch_active:
-            X, Y = self.calculate_batches(X, Y, mini_batch_size)
         try:
             self.iterate_nn(epochs, X, Y, X_test, Y_test)
         except KeyboardInterrupt:
