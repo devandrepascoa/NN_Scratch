@@ -240,7 +240,7 @@ class NN(object):
         with open(path, 'rb') as fin:
             saved_dic = pickle.load(fin)
             assert __version__ == saved_dic["version"], "Incompatible version\nCurrent version: " + __version__ + \
-                                                        "Loaded version: " + saved_dic["version"]
+                                                        "\nLoaded version: " + saved_dic["version"]
             assert self.S == saved_dic["size"], "Network model does not match,\nLoaded model shape:" \
                                                 + str(saved_dic["size"]) + "\nModel shape:" + str(self.S)
             self.params = saved_dic["params"]
