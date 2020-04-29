@@ -6,6 +6,8 @@ import sys
 import numpy as np
 import tensorflow.keras as keras
 
+__version__ = '1.0.0'
+
 
 def loadMnist():
     (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
@@ -229,7 +231,7 @@ class NN(object):
     # Function to save the neural network object(Will add only weights and biases in future)
     def save(self, path="neural_network"):
         with open(path, 'wb') as fout:
-            save_dic = {"params": self.params, "size": self.S}
+            save_dic = {"params": self.params, "size": self.S, "version": __version__}
             pickle.dump(save_dic, fout)
             fout.close()
 
@@ -237,6 +239,8 @@ class NN(object):
     def load(self, path="neural_network"):
         with open(path, 'rb') as fin:
             saved_dic = pickle.load(fin)
+            assert __version__ == saved_dic["version"], "Incompatible version\nCurrent version: " + __version__ + \
+                                                        "Loaded version: " + saved_dic["version"]
             assert self.S == saved_dic["size"], "Network model does not match,\nLoaded model shape:" \
                                                 + str(saved_dic["size"]) + "\nModel shape:" + str(self.S)
             self.params = saved_dic["params"]
@@ -396,4 +400,3 @@ class NN(object):
             if self.save_enabled:
                 self.save()
             sys.exit()
-
