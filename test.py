@@ -29,10 +29,7 @@ print("""
 """)
 
 model = NN(shape=[784, 128, 128, 10])
-<<<<<<< HEAD
 
-=======
->>>>>>> 34005db59e3a3b3dd61fe90ba6073e4ea25cd057
 model.fit((x_train, y_train), val_dataset=(x_test, y_test), epochs=5000, learning_rate=0.01, mini_batch_size=64,
           enable_dropout=True, save_enabled=True, dropout_value=0.8)
 model.save()
