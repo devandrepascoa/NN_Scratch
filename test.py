@@ -30,7 +30,7 @@ print("""
 
 model = NN(shape=[784, 128, 128, 10])
 model.fit((x_train, y_train), val_dataset=(x_test, y_test), epochs=5000, learning_rate=0.01, mini_batch_size=1000,
-          enable_dropout=True, save_enabled=True, dropout_value=0.5)
+          enable_dropout=True, save_enabled=True, dropout_value=0.8)
 model.save()
 model.load()
 print(model.evaluate((x_test, y_test))["accuracy"])
