@@ -1,8 +1,5 @@
-import json
-
 import matplotlib.pyplot as plt
 from PIL import Image, ImageOps
-import neural
 from neural.neuralnet import *
 
 (x_train, y_train), (x_test, y_test) = loadMnist()
@@ -31,20 +28,20 @@ print("""
                  { } 
 """)
 
-model = NN(shape=[784, 512, 10])
-#model.fit((x_train, y_train), val_dataset=(x_test, y_test), epochs=5000, learning_rate=0.01, mini_batch_size=1000,
-#           enable_dropout=True, save_enabled=True)
-#model.save()
+model = NN(shape=[784, 128, 128, 10])
+model.fit((x_train, y_train), val_dataset=(x_test, y_test), epochs=5000, learning_rate=0.01, mini_batch_size=1000,
+          enable_dropout=True, save_enabled=True, dropout_value=0.5)
+model.save()
 model.load()
 print(model.evaluate((x_test, y_test))["accuracy"])
 
-# image = import_to_gray("icon.png")
-# plt.imshow(image.reshape(28, 28))
-# for i in range(0, len(image)):
-#     if image[i] == 1:
-#         image[i] = 0.99
-#
-# result = model.predict(image)  # input (784,1) [0,1]
-# print("Predicted {}".format(np.argmax(result)))
-#
-# plt.show()
+image = import_to_gray("icon.jpg")
+plt.imshow(image.reshape(28, 28))
+for i in range(0, len(image)):
+    if image[i] == 1:
+        image[i] = 0.99
+
+result = model.predict(image)  # input (784,1) [0,1]
+print("Predicted {}".format(result))
+
+plt.show()
