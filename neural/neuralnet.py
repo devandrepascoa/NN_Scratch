@@ -1,5 +1,7 @@
+import json
 import pickle
 import random
+import sys
 
 import numpy as np
 import tensorflow.keras as keras
@@ -118,7 +120,7 @@ class NN(object):
     # Function to initialize our parameters( Weights and biases)
 
     def init_params(self):
-        parameters = {}
+        parameters = dict()
         length = len(self.S)  # neural network length
         for i in range(1, length):
             # (np.sqrt(2 / S[i - 1])) important for weight initialization, using He initialization(NOT Xavier)
@@ -127,34 +129,35 @@ class NN(object):
         return parameters
 
     # Function to do a full forward propagation with the current parameters
-    def forward_propagate(self, X, Y, params, train_mode):
-        cache = {}
+    def forward_propagate(self, X, params, train_mode, Y=None):
+        cache = dict()
         length = len(self.S)  # neural network length
         # First Layer
         cache["Z1"] = np.dot(params["W1"], X) + params["B1"]
         cache["A1"] = MathUtils.relu(cache["Z1"])
-        if train_mode and self.enable_dropout:
-            self.dropout_fwd(cache, "1", 0.5)
+        if train_mode and self.enable_dropout:  # Dropping 50% of neurons if in training mode and dropout mode
+            self.dropout_fwd(cache, "1", self.dropout_value)
 
         for i in range(2, length - 1):
             cache["Z" + str(i)] = np.dot(params["W" + str(i)],
                                          cache["A" + str(i - 1)]) + params["B" + str(i)]
             cache["A" + str(i)] = MathUtils.relu(cache["Z" + str(i)])
-            if train_mode and self.enable_dropout:  # Dropping 50% of neurons if in training mode and dropout mode
-                self.dropout_fwd(cache, str(i), 0.5)
+            if train_mode and self.enable_dropout:
+                self.dropout_fwd(cache, str(i), self.dropout_value)
 
         # Output layer
         cache["Z" + str(length - 1)] = np.dot(params["W" + str(length - 1)],
                                               cache["A" + str(length - 2)]) + params["B" + str(length - 1)]
         cache["A" + str(length - 1)] = MathUtils.softmax(cache["Z" + str(length - 1)])
         Yhat = cache["A" + str(length - 1)]
-        cache["cost"] = MathUtils.cross_entropy(Yhat, Y)
-        cache["accuracy"] = self.get_accuracy(Yhat, Y)
+        if Y is not None:
+            cache["cost"] = MathUtils.cross_entropy(Yhat, Y)
+            cache["accuracy"] = self.get_accuracy(Yhat, Y)
         return cache
 
     # Back propagation using Gradient descent
     def back_propagate(self, X, Y, cache, parameters):
-        gradients = {}
+        gradients = dict()
         length = len(self.S)  # neural network length
         M = Y.shape[1]  # Number of training examples
         # Gradients for activations and before applying activations
@@ -164,7 +167,8 @@ class NN(object):
             gradients["da" + str(length - i)] = np.dot(parameters["W" + str(length - i + 1)].T,
                                                        gradients["dz" + str(length - i + 1)])
             if self.enable_dropout:
-                self.dropout_bw(cache, gradients, str(length - i), 0.5)  # Dropping out 50% of the neurons
+                self.dropout_bw(cache, gradients, str(length - i),
+                                self.dropout_value)  # Dropping out 50% of the neurons
             gradients["dz" + str(length - i)] = gradients["da" + str(length - i)] * MathUtils.relu_deriv(
                 cache["Z" + str(length - i)])
 
@@ -199,7 +203,7 @@ class NN(object):
     # Function to evaluate the neural network on a certain dataset
     def evaluate(self, dataset):
         (X, Y) = dataset
-        cache = self.forward_propagate(X, self.params, self.S, False)
+        cache = self.forward_propagate(X, self.params, False, Y)
         cost = MathUtils.cross_entropy(cache["A" + str(len(self.S) - 1)], Y)
         accuracy = self.get_accuracy(cache["A" + str(len(self.S) - 1)], Y)
         return {"cache": cache, "cost": cost, "accuracy": accuracy}
@@ -209,7 +213,7 @@ class NN(object):
     def predict(self, input_data):
         assert input_data.shape == (self.S[0], 1)
         X = input_data
-        cache = self.forward_propagate(X, self.params, self.S, False)
+        cache = self.forward_propagate(X, self.params, False)
         label = cache["A" + str(len(self.S) - 1)]
         return label
 
@@ -224,17 +228,19 @@ class NN(object):
 
     # Function to save the neural network object(Will add only weights and biases in future)
     def save(self, path="neural_network"):
-        outfile = open(path, 'wb')
-        pickle.dump(self, outfile)
-        outfile.close()
+        with open(path, 'wb') as fout:
+            save_dic = {"params": self.params, "size": self.S}
+            pickle.dump(save_dic, fout)
+            fout.close()
 
     # Function to load a neural network object
-    @staticmethod
-    def load(path="neural_network"):
-        infile = open(path, 'rb')
-        nn = pickle.load(infile)
-        infile.close()
-        return nn
+    def load(self, path="neural_network"):
+        with open(path, 'rb') as fin:
+            saved_dic = pickle.load(fin)
+            assert self.S == saved_dic["size"], "Network model does not match,\nLoaded model shape:" \
+                                                + str(saved_dic["size"]) + "\nModel shape:" + str(self.S)
+            self.params = saved_dic["params"]
+            fin.close()
 
     def calculate_batches(self, X, Y, mini_batch_size, shuffle=False):
         M = X.shape[1]  # Number of training examples
@@ -268,13 +274,13 @@ class NN(object):
                 modified_params = parameters.copy()
                 modified_params[i][idx] = thetaplus
                 # testing network based on modified params
-                cache = self.forward_propagate(X,Y, modified_params, True)
+                cache = self.forward_propagate(X, modified_params, True, Y)
                 J_Plus = cache["cost"]
 
                 thetaminus = parameters[i][idx] - epsilon
                 modified_params = parameters.copy()
                 modified_params[i][idx] = thetaminus
-                cache = self.forward_propagate(X, modified_params, True)
+                cache = self.forward_propagate(X, modified_params, True, Y)
                 J_Minus = cache["cost"]
                 # Adding the approximation to a list
                 grad_approx.append((J_Plus - J_Minus) / (2 * epsilon))
@@ -312,54 +318,82 @@ class NN(object):
 
     # (data, number_of_samples) <--input data shape ex:(784,60000) for mnist
     # [input_size,hidden_layers,output_size] <--shape list shape ex:[784,128,128,10] for mnist
-    def __init__(self, dataset, val_dataset=None, epochs=2000, learning_rate=0.5, shape=None,
-                 print_costs=True, mini_batch_size=1000,
-                 early_stopping=True, enable_dropout=True, check_grads=False):
+    def __init__(self, shape):
+
+        if shape is not None:
+            self.S = shape
+            assert len(self.S) > 2
+
+    def iterate_nn(self, epochs, X, Y, X_test, Y_test):
+
+        for i in range(0, epochs):
+            cache = None
+            if self.mini_batch_active:
+                for x, y in zip(X, Y):  # For every mini batch
+                    cache = self.forward_propagate(x, self.params, True, y)
+                    grads = self.back_propagate(x, y, cache, self.params)
+                    if self.check_grads:
+                        self.gradient_check(self.params, grads, x, y)
+                    self.gradient_descent(grads, self.params, self.learning_rate)
+            else:
+                cache = self.forward_propagate(x, self.params, True, y)
+                grads = self.back_propagate(x, y, cache, self.params)
+                if self.check_grads:
+                    self.gradient_check(self.params, grads, x, y)
+                self.gradient_descent(grads, self.params, self.learning_rate)
+            if i % 100 == 0:
+                if self.print_costs:
+                    print("Epoch:{},Cost:{}, Accuracy:{}".format(i, cache["cost"], cache["accuracy"]))
+                    if self.validate_enabled:
+                        cache_test = self.forward_propagate(X_test, self.params, False, Y_test)
+                        print("Validation Cost:{}, Validation Accuracy:{}".format(cache_test["cost"],
+                                                                                  cache_test["accuracy"]))
+
+    def fit(self, dataset, val_dataset=None, dropout_value=0.8, check_grads=False, early_stopping=True,
+            print_costs=True, epochs=2000, learning_rate=0.01, mini_batch_active=True,
+            mini_batch_size=1000, enable_dropout=True, save_enabled=True):
+
         self.enable_dropout = enable_dropout
+        self.dropout_value = dropout_value
+        self.check_grads = check_grads
+        self.early_stopping = early_stopping
+        self.learning_rate = learning_rate
+        self.print_costs = print_costs
+        self.save_enabled = save_enabled
+        self.validate_enabled = True if val_dataset is not None else False
+        self.mini_batch_active = mini_batch_active
 
         # Validations
         NN.validate_dataset(dataset, "Data set")
-        if val_dataset is not None:
+        if self.validate_enabled:
             NN.validate_dataset(val_dataset, "Validation set")
 
         assert not (check_grads and enable_dropout), (
             "Gradient checking and Dropout regularization cannot be both enabled at the same time.")
 
         (X, Y) = dataset
+        X_test, Y_test = None, None
         assert len(X.shape) == 2
         assert len(Y.shape) == 2
-        if val_dataset is not None:
+        if self.validate_enabled:
             (X_test, Y_test) = val_dataset
-            assert len(X_test.shape) == 2
-            assert len(Y_test.shape) == 2
+            assert len(X_test.shape) == 2, "Incorrect data shape"
+            assert len(Y_test.shape) == 2, "Incorrect data shape"
 
-        if shape is not None:
-            self.S = shape
-            assert len(self.S) > 2
-            assert self.S[0] == X.shape[0] and self.S[-1] == Y.shape[0]
-        else:  # Predefined shape
-            self.S = [dataset[0].shape[0], 30, 10]
+        assert self.S[0] == X.shape[0] and self.S[-1] == Y.shape[0], "Incorrect data shape"
         self.params = self.init_params()
-
         print("Starting training, NN dimensions: {}".format(self.S))
 
         M = X.shape[1]  # Number of training examples
 
         # turning X and Y into mini batches of mini_batch_size
-        X, Y = self.calculate_batches(X, Y, mini_batch_size)
+        if mini_batch_active:
+            X, Y = self.calculate_batches(X, Y, mini_batch_size)
+        try:
+            self.iterate_nn(epochs, X, Y, X_test, Y_test)
+        except KeyboardInterrupt:
+            print("Interrupted, saving parameters")
+            if self.save_enabled:
+                self.save()
+            sys.exit()
 
-        for i in range(0, epochs):
-
-            for x, y in zip(X, Y):  # For every mini batch
-                cache = self.forward_propagate(x,y, self.params, True)
-                grads = self.back_propagate(x, y, cache, self.params)
-                if check_grads:
-                    self.gradient_check(self.params, grads, x, y)
-                self.gradient_descent(grads, self.params, learning_rate)
-
-            if i % 100 == 0:
-                if print_costs:
-                    print("Epoch:{},Cost:{}, Accuracy:{}".format(i, cache["cost"], cache["accuracy"]))
-                    if val_dataset is not None:
-                        cache_test = self.forward_propagate(X_test,Y_test, self.params, False)
-                        print("Validation Cost:{}, Validation Accuracy:{}".format(cache_test["cost"], cache_test["accuracy"]))
