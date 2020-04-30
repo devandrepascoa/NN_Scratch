@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from PIL import Image, ImageOps
-from neural.neuralnet import *
+from neural.neuralnet import NN, MathUtils, loadMnist
+import numpy as np
 
 (x_train, y_train), (x_test, y_test) = loadMnist()
 
@@ -30,8 +31,8 @@ print("""
 
 model = NN(shape=[784, 128, 128, 10])
 
-model.fit((x_train, y_train), val_dataset=(x_test, y_test), epochs=5000, learning_rate=0.01, mini_batch_size=64,
-          enable_dropout=True, save_enabled=True, dropout_value=0.8)
+model.fit((x_train, y_train), val_dataset=(x_test, y_test),
+          optimizer="adam", epochs=5000, mini_batch_active=True)
 model.save()
 model.load()
 print(model.evaluate((x_test, y_test))["accuracy"])
