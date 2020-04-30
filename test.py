@@ -32,7 +32,7 @@ print("""
 model = NN(shape=[784, 128, 128, 10])
 
 model.fit((x_train, y_train), val_dataset=(x_test, y_test),
-          optimizer="adam", epochs=5000, mini_batch_active=True)
+          optimizer="adam", epochs=5000,mini_batch_active=True)
 model.save()
 model.load()
 print(model.evaluate((x_test, y_test))["accuracy"])

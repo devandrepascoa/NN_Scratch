@@ -41,5 +41,4 @@ def init_params_adam(self):
         directions["mdb" + str(i)] = np.zeros(self.params["B" + str(i)].shape)
         directions["rdw" + str(i)] = np.zeros(self.params["W" + str(i)].shape)
         directions["rdb" + str(i)] = np.zeros(self.params["B" + str(i)].shape)
-
     return directions

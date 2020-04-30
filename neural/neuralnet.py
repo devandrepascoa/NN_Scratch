@@ -33,24 +33,16 @@ def loadCifar10():
 
 
 class MathUtils():
-    @staticmethod
-    def flatten_dic(dic):
-        keys = []
-        count = 0
-        theta = np.array([])
-        for i in dic.keys():
-            new_vector = np.reshape(dic[i], (-1, 1))
-            keys = keys + [i] * new_vector.shape[0]
-            if count == 0:
-                theta = new_vector
-            else:
-                theta = np.concatenate((theta, new_vector), axis=0)
-            count = count + 1
-        return theta, keys
 
     @staticmethod
-    def vector_to_dic(vector, keys):
-        return None
+    def hotOne(array, output_size):  # Creates a hot One array from single digit
+        assert len(array.shape) == 2, "Input has to have shape (data,data_size)"
+        Y_orig = array
+        Y = np.zeros((output_size, Y_orig.shape[-1]))
+        for i in range(0, Y_orig.shape[1]):
+            value = Y_orig[0, i]
+            Y[value, i] = 1.0
+        return Y
 
     @staticmethod
     def sigmoid(x):
@@ -66,23 +58,12 @@ class MathUtils():
 
     @staticmethod
     def relu_deriv(x):
-        return np.greater(x, 0).astype(int)
+        return np.heaviside(x, 0)
 
     @staticmethod
     def softmax(x):
-        print(x)
         e_x = np.exp(x - np.max(x))
-        return e_x / e_x.sum(axis=0)
-
-    @staticmethod
-    def hotOne(array, output_size):  # Creates a hot One array from single digit
-        assert len(array.shape) == 2, "Input has to have shape (data,data_size)"
-        Y_orig = array
-        Y = np.zeros((output_size, Y_orig.shape[-1]))
-        for i in range(0, Y_orig.shape[1]):
-            value = Y_orig[0, i]
-            Y[value, i] = 1.0
-        return Y
+        return e_x / np.sum(e_x, axis=0)
 
     @staticmethod
     def softmax_deriv(x):
@@ -98,17 +79,6 @@ class MathUtils():
     @staticmethod
     def cross_entropy_deriv(A, Y):
         return -(Y / A) + (1 + Y) / (1 + A)
-
-    @staticmethod  # normalize for dados of type (data,number_samples)
-    def normalize(data):
-        data = data - MathUtils.media(data)
-        constant = MathUtils.media((data ** 2))
-        return data / constant
-
-    @staticmethod  # media para dados do tipo (data,number_samples)
-    def media(data):
-        soma = np.sum(data, axis=0)
-        return soma / data.shape[0]
 
 
 # TODO
@@ -232,7 +202,8 @@ class NN(object):
     def calculate_batches(self, X, Y, mini_batch_size, shuffle=False):
         M = X.shape[1]  # Number of training examples
         if mini_batch_size == M:
-            yield X, Y
+            yield X, Y, 1
+            return
         counter = 0  # Counter
         # Shuffles the dataset with synchronization (X,Y)
         if shuffle:
@@ -326,44 +297,39 @@ class NN(object):
             assert len(self.S) > 2
 
     def fit_iteration(self, epochs, X, Y, X_test, Y_test):
-        for i in range(0, epochs):
+        for i in range(1, epochs):
             cache = None
             avg_accuracy = 0  # average accuracy for mini batches
-            if self.mini_batch_active:  # 1 epoch for mini batch
-                counter = 0  # Counter for averaging accuracy
-                for x, y, z in self.calculate_batches(X, Y, self.mini_batch_size):  # For every mini batch
-                    cache = self.forward_propagate(x, self.params, True, y)
-                    grads = self.back_propagate(x, y, cache, self.params)
-                    if self.check_grads:
-                        self.gradient_check(self.params, grads, x, y)
+            counter = 0  # Counter for averaging accuracy
+            for x, y, z in self.calculate_batches(X, Y, self.mini_batch_size):  # For every mini batch
+                cache = self.forward_propagate(x, self.params, True, y)
+                grads = self.back_propagate(x, y, cache, self.params)
+                if self.check_grads:
+                    self.gradient_check(self.params, grads, x, y)
 
-                    # Initializing directions
-                    if self.optimizer == "adam":
-                        Adam_Optimizer(self, grads, self.params, self.learning_rate)
-                    elif self.optimizer == "rms":
-                        RMS_Prop(self, grads, self.params, self.learning_rate)
-                    elif self.optimizer == "momentum":
-                        gradient_descent_with_momentum(self, grads, self.params, self.learning_rate)
-                    elif self.optimizer == "gd":
-                        gradient_descent(self, grads, self.params, self.learning_rate)
-                    else:
-                        raise AssertionError("Wrong Optimizer selected " + self.optimizer)
+                # Initializing directions
+                if self.optimizer == "adam":
+                    Adam_Optimizer(self, i, grads, self.params, self.learning_rate)
+                elif self.optimizer == "rms":
+                    RMS_Prop(self, i, grads, self.params, self.learning_rate)
+                elif self.optimizer == "momentum":
+                    gradient_descent_with_momentum(self, i, grads, self.params, self.learning_rate)
+                elif self.optimizer == "gd":
+                    gradient_descent(self, grads, self.params, self.learning_rate)
+                else:
+                    raise AssertionError("Wrong Optimizer selected " + self.optimizer)
 
-                    avg_accuracy += cache["accuracy"]
-                    counter = z
-                avg_accuracy /= counter
+                avg_accuracy += cache["accuracy"]
+                counter = z
+            avg_accuracy /= counter
 
-            if i % 100 == 0:  # For every 100th epoch print cost and accuracy and test for validation data
-                if self.print_costs:
-                    # Printing average accuracy for mini batch and current accuracy for batched gradient descent
-                    if self.mini_batch_active:
-                        print("Epoch:{},Cost:{}, Accuracy:{}".format(i, cache["cost"], avg_accuracy))
-                    else:
-                        print("Epoch:{},Cost:{}, Accuracy:{}".format(i, cache["cost"], cache["accuracy"]))
-                    if self.validate_enabled:
-                        cache_test = self.forward_propagate(X_test, self.params, False, Y_test)
-                        print("Validation Cost:{}, Validation Accuracy:{}".format(cache_test["cost"],
-                                                                                  cache_test["accuracy"]))
+            if self.print_costs:
+                # Printing average accuracy for mini batch and current accuracy for batched gradient descent
+                print("Epoch:{},Cost:{}, Accuracy:{}".format(i, cache["cost"], avg_accuracy))
+                if self.validate_enabled:
+                    cache_test = self.forward_propagate(X_test, self.params, False, Y_test)
+                    print("Validation Cost:{}, Validation Accuracy:{}".format(cache_test["cost"],
+                                                                              cache_test["accuracy"]))
 
     # (data, number_of_samples) <--input data shape ex:(784,60000) for mnist
     # [input_size,hidden_layers,output_size] <--shape list shape ex:[784,128,128,10] for mnist
@@ -373,7 +339,6 @@ class NN(object):
             early_stopping=True, Beta1=0.9, Beta2=0.999,
             print_costs=True, epochs=2000, learning_rate=0.01, mini_batch_active=False,
             mini_batch_size=64, enable_dropout=True, save_enabled=True):
-
         self.enable_dropout = enable_dropout
         self.dropout_value = dropout_value
         self.check_grads = check_grads
@@ -421,6 +386,9 @@ class NN(object):
             pass
         else:
             raise AssertionError("Wrong Optimizer selected " + optimizer)
+
+        if not self.mini_batch_active:
+            self.mini_batch_size = X.shape[1]
 
         print("Starting training, NN dimensions: {}".format(self.S))
 
