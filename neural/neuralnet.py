@@ -70,9 +70,9 @@ class MathUtils():
         return MathUtils.softmax(x) * (1 - MathUtils.softmax(x))
 
     @staticmethod
-    def cross_entropy(A, Y, epsilon=1e-8):
+    def cross_entropy(A, Y):
         M = A.shape[1]
-        logprobs = np.multiply(np.log(A + epsilon), Y)
+        logprobs = np.multiply(np.log(A), Y)
         cost = - np.sum(logprobs) / M
         return float(np.squeeze(cost))
 
