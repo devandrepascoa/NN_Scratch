@@ -25,7 +25,7 @@ def run_nn(args):
         _{        )   )
       ,   ) -~~- ( ,-' )_
      (  `-,_..`., )-- '_,)
-    ( ` _)  (  -~( -_ `,  }     BIG BRAIN MACHINE BY ANDRÉ PÁSCOA
+    ( ` _)  (  -~( -_ `,  }     BIG BRAIN MACHINE BY ANDRE PASCOA
 
     (_-  _  ~_-~~~~`,  ,' )
       `~ -^(    __;-,((()))
