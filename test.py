@@ -1,7 +1,11 @@
 import argparse
 
 from PIL import Image, ImageOps
-from neural.neuralnet import NN, loadMnist
+
+from neural import losses
+from neural.Network import Network
+from neural.datasets import loadMnist
+from neural.layers import *
 import numpy as np
 
 (x_train, y_train), (x_test, y_test) = loadMnist()
@@ -43,11 +47,17 @@ def run_nn(args):
             shape.append(int(layer))
 
     shape.append(10)
-    model = NN(shape)
+    model = Network()
+    model.add(DenseLayer(784, 128))
+    model.add(Relu())
+    model.add(DenseLayer(128, 10))
+    model.add(Softmax())
+
     if args.fit:
-        model.fit((x_train, y_train), val_dataset=(x_test, y_test), learning_rate=args.learning_rate,
-                  optimizer=args.optimizer, epochs=args.epochs, mini_batch_active=True,
-                  mini_batch_size=args.mini_batch_size, dropout_value=args.dropout)
+        optimizer = SGD()
+        model.compile(optimizer=optimizer, loss=losses.cross_entropy)
+        model.fit((x_train, y_train), val_dataset=(x_test, y_test))
+
         print(model.evaluate((x_test, y_test))["accuracy"])
 
     if args.save:

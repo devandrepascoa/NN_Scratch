@@ -6,82 +6,14 @@ import tensorflow.keras as keras
 
 __version__ = '1.0.0'
 
-from neural.initializations import *
 from neural.optimizers import *
 
-
-def loadMnist():
-    (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
-    x_train = (x_train.reshape(x_train.shape[0], -1)).T / 255.0
-    x_test = (x_test.reshape(x_test.shape[0], -1)).T / 255.0
-    y_train = (y_train.reshape(y_train.shape[0], 1)).T
-    y_test = (y_test.reshape(y_test.shape[0], 1)).T
-    y_train = MathUtils.hotOne(y_train, 10)
-    y_test = MathUtils.hotOne(y_test, 10)
-    return (x_train, y_train), (x_test, y_test)
-
-
-def loadCifar10():
-    (x_train, y_train), (x_test, y_test) = keras.datasets.cifar10.load_data()
-    x_train = (x_train.reshape(x_train.shape[0], -1) / 255.0).T
-    x_test = (x_test.reshape(x_test.shape[0], -1) / 255.0).T
-    y_train = (y_train.reshape(y_train.shape[0], 1)).T
-    y_test = (y_test.reshape(y_test.shape[0], 1)).T
-    y_train = MathUtils.hotOne(y_train, 10)
-    y_test = MathUtils.hotOne(y_test, 10)
-    return (x_train, y_train), (x_test, y_test)
 
 
 class MathUtils():
 
-    @staticmethod
-    def hotOne(array, output_size):  # Creates a hot One array from single digit
-        assert len(array.shape) == 2, "Input has to have shape (data,data_size)"
-        Y_orig = array
-        Y = np.zeros((output_size, Y_orig.shape[-1]))
-        for i in range(0, Y_orig.shape[1]):
-            value = Y_orig[0, i]
-            Y[value, i] = 1.0
-        return Y
 
-    @staticmethod
-    def sigmoid(x):
-        return 1 / (1 + np.exp(-x))
 
-    @staticmethod
-    def sigmoid_deriv(x):
-        return MathUtils.sigmoid(x) * (1 - MathUtils.sigmoid(x))
-
-    @staticmethod
-    def relu(x):
-        x[x < 0] = 0
-        return x
-
-    @staticmethod
-    def relu_deriv(x):
-        x[x <= 0] = 0
-        x[x > 0] = 1
-        return x
-
-    @staticmethod
-    def softmax(x):
-        e_x = np.exp(x - np.max(x))
-        return e_x / np.sum(e_x, axis=0)
-
-    @staticmethod
-    def softmax_deriv(x):
-        return MathUtils.softmax(x) * (1 - MathUtils.softmax(x))
-
-    @staticmethod
-    def cross_entropy(A, Y):
-        M = A.shape[1]
-        logprobs = np.multiply(np.log(A), Y)
-        cost = - np.sum(logprobs) / M
-        return float(np.squeeze(cost))
-
-    @staticmethod
-    def cross_entropy_deriv(A, Y):
-        return -(Y / A) + (1 + Y) / (1 + A)
 
     @staticmethod
     def l2_regularization(params, lambd, M):
