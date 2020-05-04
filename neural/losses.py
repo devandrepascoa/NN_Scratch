@@ -7,7 +7,7 @@ Loss functions
 
 def cross_entropy(YHat, Y, deriv=False):
     if deriv:
-        return -(Y / YHat) + (1 + Y) / (1 + YHat)
+        return - (np.divide(Y, YHat) - np.divide(1 - Y, 1 - YHat))
     else:
         M = YHat.shape[1]
         logprobs = np.multiply(np.log(YHat), Y)

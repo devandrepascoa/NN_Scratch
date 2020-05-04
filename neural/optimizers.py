@@ -54,11 +54,9 @@ class SGD(Optimizer):
         :param epoch:  Current Epoch, used for correcting bias
         """
 
-        print(gradients["dB"].shape)
-        print(directions["mdB"].shape)
         directions["mdW"] = self.momentum * directions["mdW"] + (1 - self.momentum) * gradients["dW"]
         directions["mdB"] = self.momentum * directions["mdB"] + (1 - self.momentum) * gradients["dB"]
-        print(directions["mdB"].shape)
+
         mdW_corrected = directions["mdW"] / (1 - np.power(self.momentum, epoch))
         mdB_corrected = directions["mdB"] / (1 - np.power(self.momentum, epoch))
 
@@ -90,14 +88,14 @@ class RMSProp(Optimizer):
         :param epsilon: Value to prevent division by zero
         """
 
-        directions["rdw"] = self.beta * directions["rdw"] + (1 - self.beta) * np.power(gradients["dw"], 2)
-        directions["rdb"] = self.beta * directions["rdb"] + (1 - self.beta) * np.power(gradients["db"], 2)
+        directions["rdW"] = self.beta * directions["rdW"] + (1 - self.beta) * np.power(gradients["dW"], 2)
+        directions["rdB"] = self.beta * directions["rdB"] + (1 - self.beta) * np.power(gradients["dB"], 2)
 
-        rdw_corrected = directions["rdw"] / (1 - np.power(self.beta, epoch))
-        rdb_corrected = directions["rdb"] / (1 - np.power(self.beta, epoch))
+        rdW_corrected = directions["rdW"] / (1 - np.power(self.beta, epoch))
+        rdB_corrected = directions["rdB"] / (1 - np.power(self.beta, epoch))
 
-        delta_W = gradients["db"] / (np.sqrt(rdw_corrected) + epsilon)
-        delta_B = gradients["db"] / (np.sqrt(rdb_corrected) + epsilon)
+        delta_W = gradients["dW"] / (np.sqrt(rdW_corrected) + epsilon)
+        delta_B = gradients["dB"] / (np.sqrt(rdB_corrected) + epsilon)
 
         parameters["W"] -= self.learning_rate * delta_W
         parameters["B"] -= self.learning_rate * delta_B
@@ -126,20 +124,20 @@ class Adam(Optimizer):
         :param epsilon: Value to prevent division by zero
         """
 
-        directions["mdW"] = self.beta1 * directions["mdW"] + (1 - self.beta1) * gradients["dw"]
-        directions["mdB"] = self.beta1 * directions["mdB"] + (1 - self.beta1) * gradients["db"]
+        directions["mdW"] = self.beta1 * directions["mdW"] + (1 - self.beta1) * gradients["dW"]
+        directions["mdB"] = self.beta1 * directions["mdB"] + (1 - self.beta1) * gradients["dB"]
 
-        directions["rdw"] = self.beta2 * directions["rdw"] + (1 - self.beta2) * np.power(gradients["dw"], 2)
-        directions["rdb"] = self.beta2 * directions["rdb"] + (1 - self.beta2) * np.power(gradients["db"], 2)
+        directions["rdW"] = self.beta2 * directions["rdW"] + (1 - self.beta2) * np.power(gradients["dW"], 2)
+        directions["rdB"] = self.beta2 * directions["rdB"] + (1 - self.beta2) * np.power(gradients["dB"], 2)
 
         mdW_corrected = directions["mdW"] / (1 - np.power(self.beta1, epoch))
         mdB_corrected = directions["mdB"] / (1 - np.power(self.beta1, epoch))
 
-        rdw_corrected = directions["rdw"] / (1 - np.power(self.beta2, epoch))
-        rdb_corrected = directions["rdb"] / (1 - np.power(self.beta2, epoch))
+        rdW_corrected = directions["rdW"] / (1 - np.power(self.beta2, epoch))
+        rdB_corrected = directions["rdB"] / (1 - np.power(self.beta2, epoch))
 
-        delta_W = mdW_corrected / (np.sqrt(rdw_corrected) + epsilon)
-        delta_B = mdB_corrected / (np.sqrt(rdb_corrected) + epsilon)
+        delta_W = mdW_corrected / (np.sqrt(rdW_corrected) + epsilon)
+        delta_B = mdB_corrected / (np.sqrt(rdB_corrected) + epsilon)
 
         parameters["W"] -= self.learning_rate * delta_W
         parameters["B"] -= self.learning_rate * delta_B

@@ -15,9 +15,10 @@ class Network:
         return output
 
     def back_propagation(self, YHat, Y, epoch):
+        M = Y.shape[1]
         grad = self.loss(YHat, Y, deriv=True)
         for layer in reversed(self.layers):
-            grad = layer.back_propagation(grad, epoch)
+            grad = layer.back_propagation(grad, M, epoch)
         return grad
 
     def add(self, layer):
@@ -57,6 +58,7 @@ class Network:
         for i in range(1, epochs):
             cost = 0
             accuracy = 0
+            counter = 0
             for X, Y in math_utils.calculate_batches(x_train, y_train, batch_size):
                 # ForwardPropagation
                 YHat = self.forward_propagation(X)
@@ -66,9 +68,9 @@ class Network:
 
                 # Backpropagation
                 grad = self.back_propagation(YHat, Y, i)
-
-            cost /= batch_size
-            accuracy /= batch_size
+                counter += 1
+            cost /= counter
+            accuracy /= counter
             if print_costs:
                 # Printing average accuracy for mini batch and current accuracy for batched gradient descent
                 print("Epoch:{},Cost:{}, Accuracy:{}".format(i, cost, accuracy))

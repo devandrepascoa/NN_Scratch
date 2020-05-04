@@ -48,15 +48,17 @@ def run_nn(args):
 
     shape.append(10)
     model = Network()
-    model.add(DenseLayer(784, 30))
+    model.add(DenseLayer(784, 512))
     model.add(Relu())
-    model.add(DenseLayer(30, 10))
+    model.add(Dropout(keep_prob=0.2))
+    model.add(DenseLayer(512, 512))
+    model.add(Relu())
+    model.add(Dropout(keep_prob=0.2))
+    model.add(DenseLayer(512, 10))
     model.add(Softmax())
 
-    #(784,64)
-
     if args.fit:
-        optimizer = SGD()
+        optimizer = RMSProp()
         model.compile(optimizer=optimizer, loss=losses.cross_entropy)
         model.fit((x_train, y_train), val_dataset=(x_test, y_test), batch_size=64)
 

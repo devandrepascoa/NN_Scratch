@@ -34,7 +34,7 @@ class Layer:
         """
         raise NotImplementedError
 
-    def back_propagation(self, dY, epoch):
+    def back_propagation(self, dY, batch_size, epoch):
         """
         Backpropagates through the layer
 
@@ -80,10 +80,10 @@ class DenseLayer(Layer):
         self.Y = np.dot(self.params["W"], self.X) + self.params["B"]
         return self.Y
 
-    def back_propagation(self, dY, epoch):
+    def back_propagation(self, dY, M, epoch):  # dY = dz
         self.grads["dX"] = np.dot(self.params["W"].T, dY)
-        self.grads["dW"] = np.dot(dY, self.X.T)
-        self.grads["dB"] = dY
+        self.grads["dW"] = np.dot(dY, self.X.T) / M
+        self.grads["dB"] = np.sum(dY, axis=1, keepdims=True) / M
 
         self.optimizer.step(self.grads, self.params, self.directions, epoch)
 
@@ -111,11 +111,12 @@ class ActivationLayer(Layer):
 
     def forward_propagation(self, X):
         self.X = X
-        self.Y = self.activation(self.X)
+        self.Y = self.activation(self.X, deriv=False)
         return self.Y
 
-    def back_propagation(self, dY, epoch):
+    def back_propagation(self, dY, batch_size, epoch):
         self.gradients["dX"] = dY * self.activation(self.X, deriv=True)
+
         return self.gradients["dX"]
 
 
@@ -138,3 +139,24 @@ class Softmax(ActivationLayer):
 
     def activation(self, X, deriv=False):
         return softmax(X, deriv)
+
+
+class Dropout(Layer):
+    """Dropout layer, deactivates multiple neurons based on a probability"""
+
+    def __init__(self, keep_prob=0.5):
+        super().__init__()
+        self.keep_prob = keep_prob
+        self.D = None
+
+    def forward_propagation(self, X):
+        self.D = np.random.rand(X.shape[0],
+                                X.shape[1]) < self.keep_prob
+        self.X = X
+        self.Y = (self.X * self.D) / self.keep_prob
+        return self.Y
+
+    def back_propagation(self, dY, batch_size, epoch):
+        dX = dY * self.D
+        dX /= self.keep_prob
+        return dX
