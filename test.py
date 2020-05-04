@@ -88,7 +88,6 @@ def argparser():
                                 "rms->Root Mean Squared Prop\n"
                                 "adam->Adam optimizer \n"
                                 "gd->Gradient descent")
-    argparser.add_argument("--dropout", type=float, default=0.8, help="Selects dropout value")
     argparser.add_argument("--learning-rate", type=float, default=0.01, help="Selects learning rate value ")
     argparser.add_argument("--mini-batch-size", type=int, default=64, help="Selects mini batch size")
     return argparser.parse_args()

@@ -1,20 +1,39 @@
-from neural import math_utils
-from neural.layers import Layer
+from neural import math_utils, losses
+from neural.layers import Layer, Optimizer
 
 
 class Network:
+    """
+    Neural network class, used for creating models
+    """
+
     def __init__(self):
         self.layers = []
         self.loss = None
         self.optimizer = None
+        self.input_size = None
 
     def forward_propagation(self, X):
+        """
+        Forward propagation implementation
+
+        :param X: Input
+        :return: Neural network Prediction(Yhat)
+        """
         output = X
         for layer in self.layers:
             output = layer.forward_propagation(output)
         return output
 
     def back_propagation(self, YHat, Y, epoch):
+        """
+        Back propagation through all layers
+
+        :param YHat: Neural network prediction
+        :param Y: Ground Truth
+        :param epoch: current epoch
+        :return: Input Gradients
+        """
         M = Y.shape[1]
         grad = self.loss(YHat, Y, deriv=True)
         for layer in reversed(self.layers):
@@ -31,10 +50,48 @@ class Network:
         self.layers.append(layer)
 
     def compile(self, optimizer, loss):
+        """
+        Sets optimizer and loss function
+
+        :param optimizer: optimizer, must be instance of ABC Optimizer
+        :param loss: loss function, check losses.py
+        """
         self.optimizer = optimizer
         self.loss = loss
+
+        assert isinstance(optimizer, Optimizer), "Selected optimizer must be instance of ABC Optimizer"
+
         for layer in self.layers:
             layer.set_optimizer(optimizer)
+
+    def evaluate(self, dataset):
+        """
+        Function to evaluate the neural network on a certain dataset
+
+        :param dataset:
+        :return: dictionary{
+         cost -> forward propagation cost,
+         accuracy -> % of data points the NN got right
+        }
+        """
+        (X, Y) = dataset
+        output = self.forward_propagation(X)
+        cost = losses.cross_entropy(output, Y)
+        accuracy = math_utils.get_accuracy(output, Y)
+        return {"cost": cost, "accuracy": accuracy}
+
+    def predict(self, input_data):
+        """
+        (data,number_of_training_examples)
+        Function to predict for a single input
+
+        :param input_data:
+        :return:
+        """
+        assert input_data.shape == (self.input_size, 1)
+        X = input_data
+        output = self.forward_propagation(X)
+        return output
 
     def fit(self, dataset, epochs=500, batch_size=1, val_dataset=None, print_costs=True):
         """
@@ -47,14 +104,18 @@ class Network:
         :param val_dataset: Test dataset, will print validation data, has to be of shape as dataset except
         number of examples
         """
-        val_enabled = True if val_dataset is not None else False
+
         assert self.optimizer is not None, "Model not compiled"
 
+        # Dataset validation
+        val_enabled = True if val_dataset is not None else False
         x_train, y_train = dataset
         x_test, y_test = None, None
         if val_enabled:
             x_test, y_test = val_dataset
 
+        self.input_size = self.layers[0].input_size
+        # Epoch iteration
         for i in range(1, epochs):
             cost = 0
             accuracy = 0
@@ -71,10 +132,12 @@ class Network:
                 counter += 1
             cost /= counter
             accuracy /= counter
+
+            # Printing Info
             if print_costs:
                 # Printing average accuracy for mini batch and current accuracy for batched gradient descent
                 print("Epoch:{},Cost:{}, Accuracy:{}".format(i, cost, accuracy))
-                if val_enabled:
+                if val_enabled:  # Validation testing
                     YHat_test = self.forward_propagation(x_test)
                     err_test = self.loss(YHat_test, y_test)
                     accuracy_test = math_utils.get_accuracy(YHat_test, y_test)
