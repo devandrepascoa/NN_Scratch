@@ -147,7 +147,7 @@ class NN(object):
                 self.dropout_bw(cache, gradients, str(length - i),
                                 self.dropout_value)  # Dropping out 50% of the neurons
             gradients["dz" + str(length - i)] = gradients["da" + str(length - i)] * MathUtils.relu_deriv(
-                cache["A" + str(length - i)])
+                cache["Z" + str(length - i)])
 
         # Gradients for weights and biases
         # dot devido a ser a soma remember my dude produto escalar

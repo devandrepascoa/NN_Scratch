@@ -8,5 +8,6 @@ class Layer:
     def forward_propagation(self, input):
         raise NotImplementedError
 
-    def back_propagation(self, output_error, learning_rate):
+    def back_propagation(self, output_deriv, learning_rate):
         raise NotImplementedError
+
