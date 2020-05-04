@@ -37,16 +37,7 @@ def run_nn(args):
                    `\  }
                      { } 
     """)
-    shape = [784]
-    if args.shape is None:
-        for i in range(1, args.size + 1):
-            size = input("Enter the size of layer " + str(i) + ": ")
-            shape.append(int(size))
-    else:
-        for layer in args.shape:
-            shape.append(int(layer))
 
-    shape.append(10)
     model = Network()
     model.add(DenseLayer(784, 512))
     model.add(Relu())
@@ -58,7 +49,7 @@ def run_nn(args):
     model.add(Softmax())
 
     if args.fit:
-        optimizer = RMSProp()
+        optimizer = Adam()
         model.compile(optimizer=optimizer, loss=losses.cross_entropy)
         model.fit((x_train, y_train), val_dataset=(x_test, y_test), batch_size=64)
 
@@ -76,8 +67,6 @@ def run_nn(args):
 
 def argparser():
     argparser = argparse.ArgumentParser(description="Mnist neural network trainer")
-    argparser.add_argument("--shape", nargs='+', default=["128", "128"],
-                           help="Example: --shape 128 128 will create nn of shape 784 128 128 10")
     argparser.add_argument("--save", type=str, help="Save network to a certain path")
     argparser.add_argument("--evaluate",
                            type=str, help="Use if evaluation on validation dataset is required")
