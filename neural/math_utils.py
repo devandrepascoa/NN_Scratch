@@ -22,7 +22,6 @@ def get_accuracy(Yhat, Y):
 
 def calculate_batches(X, Y, mini_batch_size, shuffle=True):
     M = X.shape[1]  # Number of training examples
-    print(Y.shape)
     # Shuffles the dataset with synchronization (X,Y)
     if shuffle:
         permutation = list(np.random.permutation(M))

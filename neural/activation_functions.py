@@ -27,4 +27,4 @@ def softmax(X, deriv=False):
         return softmax(X) * (1 - softmax(X))
     else:
         e_X = np.exp(X - np.max(X))
-        return e_X / np.sum(e_X, aXis=0)
+        return e_X / np.sum(e_X, axis=0)

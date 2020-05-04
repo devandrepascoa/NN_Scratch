@@ -32,6 +32,8 @@ class Network:
     def compile(self, optimizer, loss):
         self.optimizer = optimizer
         self.loss = loss
+        for layer in self.layers:
+            layer.set_optimizer(optimizer)
 
     def fit(self, dataset, epochs=500, batch_size=1, val_dataset=None, print_costs=True):
         """
@@ -45,6 +47,7 @@ class Network:
         number of examples
         """
         val_enabled = True if val_dataset is not None else False
+        assert self.optimizer is not None, "Model not compiled"
 
         x_train, y_train = dataset
         x_test, y_test = None, None

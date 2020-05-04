@@ -50,38 +50,39 @@ class DenseLayer(Layer):
     Fully Connected Layer, implementation of ABC Layer
     """
 
-    def __init__(self, X_size, Y_size):
-        super().__init__()
-        self.params = None  # Layer parameters
-        self.grads = None  # grads for gradient descent
-        self.directions = None  # Vectors for optimizers like RMSProp,Momentum and Adam
-
-    def initialize_variables(self, l_size, prev_l_size):
+    def __init__(self, input_size, output_size):
         """
         Initializes weights, biases and directions
 
-        :param l_size: Current Layer Size
-        :param prev_l_size: Previous Layer Size
+        :param input_size:
+        :param output_size:
         """
-        # He weight initialization
-        self.params["W"] = np.random.randn(l_size, prev_l_size) * (np.sqrt(2 / prev_l_size))
+        super().__init__()
+        self.params = dict()  # Layer parameters
+        self.grads = dict()  # grads for gradient descent
+        self.directions = dict()  # Vectors for optimizers like RMSProp,Momentum and Adam
+        self.input_size = input_size
+        self.output_size = output_size
+
+        # # He weight initialization
+        self.params["W"] = np.random.randn(self.output_size, self.input_size) * (np.sqrt(2 / self.input_size))
         # bias can be started with zero, doesn't affect much
-        self.params["B"] = np.zeros((l_size, 1))
+        self.params["B"] = np.zeros((self.output_size, 1))
 
         # Initializing self.directions (Even if normal gradient descent is used)
-        self.directions["mdW"] = np.zeros(self.params["w"].shape)
-        self.directions["mdB"] = np.zeros(self.params["b"].shape)
-        self.directions["rdW"] = np.zeros(self.params["w"].shape)
-        self.directions["rdB"] = np.zeros(self.params["b"].shape)
+        self.directions["mdW"] = np.zeros(self.params["W"].shape)
+        self.directions["mdB"] = np.zeros(self.params["B"].shape)
+        self.directions["rdW"] = np.zeros(self.params["W"].shape)
+        self.directions["rdB"] = np.zeros(self.params["B"].shape)
 
     def forward_propagation(self, X):
         self.X = X
-        self.Y = np.dot(self.X, self.params["W"]) + self.params["B"]
+        self.Y = np.dot(self.params["W"], self.X) + self.params["B"]
         return self.Y
 
     def back_propagation(self, dY, epoch):
-        self.grads["dX"] = np.dot(dY, self.params["W"].T)
-        self.grads["dW"] = np.dot(self.X, dY)
+        self.grads["dX"] = np.dot(self.params["W"].T, dY)
+        self.grads["dW"] = np.dot(dY, self.X.T)
         self.grads["dB"] = dY
 
         self.optimizer.step(self.grads, self.params, self.directions, epoch)
@@ -98,7 +99,7 @@ class ActivationLayer(Layer):
 
     def __init__(self):
         super().__init__()
-        self.gradients = None
+        self.gradients = dict()
 
     def activation(self, X, deriv=False):
         """

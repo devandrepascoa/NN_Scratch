@@ -54,14 +54,16 @@ class SGD(Optimizer):
         :param epoch:  Current Epoch, used for correcting bias
         """
 
+        print(gradients["dB"].shape)
+        print(directions["mdB"].shape)
         directions["mdW"] = self.momentum * directions["mdW"] + (1 - self.momentum) * gradients["dW"]
         directions["mdB"] = self.momentum * directions["mdB"] + (1 - self.momentum) * gradients["dB"]
+        print(directions["mdB"].shape)
+        mdW_corrected = directions["mdW"] / (1 - np.power(self.momentum, epoch))
+        mdB_corrected = directions["mdB"] / (1 - np.power(self.momentum, epoch))
 
-        mdw_corrected = directions["mdw"] / (1 - np.power(self.momentum, epoch))
-        mdb_corrected = directions["mdB"] / (1 - np.power(self.momentum, epoch))
-
-        parameters["W"] -= self.learning_rate * mdw_corrected
-        parameters["B"] -= self.learning_rate * mdb_corrected
+        parameters["W"] -= self.learning_rate * mdW_corrected
+        parameters["B"] -= self.learning_rate * mdB_corrected
 
 
 class RMSProp(Optimizer):
@@ -124,20 +126,20 @@ class Adam(Optimizer):
         :param epsilon: Value to prevent division by zero
         """
 
-        directions["mdw"] = self.beta1 * directions["mdw"] + (1 - self.beta1) * gradients["dw"]
-        directions["mdb"] = self.beta1 * directions["mdb"] + (1 - self.beta1) * gradients["db"]
+        directions["mdW"] = self.beta1 * directions["mdW"] + (1 - self.beta1) * gradients["dw"]
+        directions["mdB"] = self.beta1 * directions["mdB"] + (1 - self.beta1) * gradients["db"]
 
         directions["rdw"] = self.beta2 * directions["rdw"] + (1 - self.beta2) * np.power(gradients["dw"], 2)
         directions["rdb"] = self.beta2 * directions["rdb"] + (1 - self.beta2) * np.power(gradients["db"], 2)
 
-        mdw_corrected = directions["mdw"] / (1 - np.power(self.beta1, epoch))
-        mdb_corrected = directions["mdb"] / (1 - np.power(self.beta1, epoch))
+        mdW_corrected = directions["mdW"] / (1 - np.power(self.beta1, epoch))
+        mdB_corrected = directions["mdB"] / (1 - np.power(self.beta1, epoch))
 
         rdw_corrected = directions["rdw"] / (1 - np.power(self.beta2, epoch))
         rdb_corrected = directions["rdb"] / (1 - np.power(self.beta2, epoch))
 
-        delta_W = mdw_corrected / (np.sqrt(rdw_corrected) + epsilon)
-        delta_B = mdb_corrected / (np.sqrt(rdb_corrected) + epsilon)
+        delta_W = mdW_corrected / (np.sqrt(rdw_corrected) + epsilon)
+        delta_B = mdB_corrected / (np.sqrt(rdb_corrected) + epsilon)
 
         parameters["W"] -= self.learning_rate * delta_W
         parameters["B"] -= self.learning_rate * delta_B
