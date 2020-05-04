@@ -10,7 +10,7 @@ def gradient_descent(self, gradients, parameters, learning_rate):
 
 
 # Function to adjust our weights and biases(parameters) based on the respective gradient and learning rate
-def gradient_descent_with_momentum(self, epoch, gradients, parameters, learning_rate):
+def gradient_descent_with_momentum(self, epoch, gradients, parameters, threshold=5.0, learning_rate):
     length = len(self.S)  # neural network length
     for i in range(1, length):
         self.directions["mdw" + str(i)] = self.Beta1 * self.directions["mdw" + str(i)] \
@@ -23,6 +23,9 @@ def gradient_descent_with_momentum(self, epoch, gradients, parameters, learning_
 
         parameters["W" + str(i)] -= learning_rate * mdw_corrected
         parameters["B" + str(i)] -= learning_rate * mdb_corrected
+
+        parameters["W" + str(i)] = parameters["W" + str(i)] * (threshold / np.linalg.norm(parameters["W" + str(i)]))
+        parameters["B" + str(i)] = parameters["B" + str(i)] * (threshold / np.linalg.norm(parameters["B" + str(i)]))
 
 
 # Function to adjust our weights and biases(parameters) based on the respective gradient and learning rate
@@ -40,22 +43,13 @@ def RMS_Prop(self, epoch, gradients, parameters, learning_rate, threshold=5.0, e
         delta_W = gradients["db" + str(i)] / (np.sqrt(rdw_corrected) + epsilon)
         delta_B = gradients["db" + str(i)] / (np.sqrt(rdb_corrected) + epsilon)
 
-        delta_W = delta_W * (threshold / np.linalg.norm(delta_W))
-        delta_B = delta_B * (threshold / np.linalg.norm(delta_B))
-
-        if not(np.all(delta_W <= 5.5)):
-            print("Nut Working W")
-
-        if not(np.all(delta_W <= 5.5)):
-            print("Nut Working B")
-
         parameters["W" + str(i)] -= learning_rate * delta_W
         parameters["B" + str(i)] -= learning_rate * delta_B
 
-    # Function to adjust our weights and biases(parameters) based on the respective gradient and learning rate
+        parameters["W" + str(i)] = parameters["W" + str(i)] * (threshold / np.linalg.norm(parameters["W" + str(i)]))
+        parameters["B" + str(i)] = parameters["B" + str(i)] * (threshold / np.linalg.norm(parameters["B" + str(i)]))
 
 
-# constant to prevent division by 0
 def Adam_Optimizer(self, epoch, gradients, parameters, learning_rate, threshold=5.0, epsilon=1e-9):
     length = len(self.S)  # neural network length
     for i in range(1, length):
@@ -78,8 +72,8 @@ def Adam_Optimizer(self, epoch, gradients, parameters, learning_rate, threshold=
         delta_W = mdw_corrected / (np.sqrt(rdw_corrected) + epsilon)
         delta_B = mdb_corrected / (np.sqrt(rdb_corrected) + epsilon)
 
-        delta_W = delta_W * (threshold / np.linalg.norm(delta_W))
-        delta_B = delta_B * (threshold / np.linalg.norm(delta_B))
-
         parameters["W" + str(i)] -= learning_rate * delta_W
         parameters["B" + str(i)] -= learning_rate * delta_B
+
+        parameters["W" + str(i)] = parameters["W" + str(i)] * (threshold / np.linalg.norm(parameters["W" + str(i)]))
+        parameters["B" + str(i)] = parameters["B" + str(i)] * (threshold / np.linalg.norm(parameters["B" + str(i)]))
