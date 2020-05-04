@@ -54,11 +54,14 @@ class MathUtils():
 
     @staticmethod
     def relu(x):
-        return np.maximum(0, x)
+        x[x < 0] = 0
+        return x
 
     @staticmethod
     def relu_deriv(x):
-        return np.heaviside(x, 0)
+        x[x <= 0] = 0
+        x[x > 0] = 1
+        return x
 
     @staticmethod
     def softmax(x):
@@ -80,6 +83,14 @@ class MathUtils():
     def cross_entropy_deriv(A, Y):
         return -(Y / A) + (1 + Y) / (1 + A)
 
+    @staticmethod
+    def l2_regularization(params, lambd, M):
+        sum = 0
+        for key in params:
+            if key.startswith("W"):
+                sum += np.sum(np.square(params[key]))
+        return lambd * sum / (2 * M)
+
 
 # TODO
 # Improve oop architecture !! high priority
@@ -90,9 +101,11 @@ class MathUtils():
 class NN(object):
 
     # Function to do a full forward propagation with the current parameters
-    def forward_propagate(self, X, params, train_mode, Y=None):
+    def forward_propagate(self, X, params, train_mode, Y=None, lambd=0.7):
         cache = dict()
         length = len(self.S)  # neural network length
+        M = X.shape[1]  # Number of training examples
+
         # First Layer
         cache["Z1"] = np.dot(params["W1"], X) + params["B1"]
         cache["A1"] = MathUtils.relu(cache["Z1"])
@@ -110,17 +123,20 @@ class NN(object):
         cache["Z" + str(length - 1)] = np.dot(params["W" + str(length - 1)],
                                               cache["A" + str(length - 2)]) + params["B" + str(length - 1)]
         cache["A" + str(length - 1)] = MathUtils.softmax(cache["Z" + str(length - 1)])
-        Yhat = cache["A" + str(length - 1)]
+        Yhat = cache["A" + str(length - 1)]  # Final prediction
+
         if Y is not None:
-            cache["cost"] = MathUtils.cross_entropy(Yhat, Y)
+            # Computing costs (L2 regularization included)
+            cache["cost"] = MathUtils.cross_entropy(Yhat, Y) + MathUtils.l2_regularization(params, lambd, M)
             cache["accuracy"] = self.get_accuracy(Yhat, Y)
         return cache
 
     # Back propagation using Gradient descent
-    def back_propagate(self, X, Y, cache, parameters):
+    def back_propagate(self, X, Y, cache, parameters, lambd=0.7):
         gradients = dict()
         length = len(self.S)  # neural network length
-        M = Y.shape[1]  # Number of training examples
+        M = X.shape[1]  # Number of training examples
+
         # Gradients for activations and before applying activations
         Yhat = cache["A" + str(length - 1)]  # Predicted Output
         gradients["dz" + str(length - 1)] = (Yhat - Y)
@@ -131,11 +147,11 @@ class NN(object):
                 self.dropout_bw(cache, gradients, str(length - i),
                                 self.dropout_value)  # Dropping out 50% of the neurons
             gradients["dz" + str(length - i)] = gradients["da" + str(length - i)] * MathUtils.relu_deriv(
-                cache["Z" + str(length - i)])
+                cache["A" + str(length - i)])
 
         # Gradients for weights and biases
-        gradients["dw1"] = (1 / M) * np.dot(gradients["dz1"],
-                                            X.T)  # dot devido a ser a soma remember my dude produto escalar
+        # dot devido a ser a soma remember my dude produto escalar
+        gradients["dw1"] = (1.0 / M) * np.dot(gradients["dz1"], X.T) + (lambd * parameters["W1"]) / M
         gradients["db1"] = (1 / M) * np.sum(gradients["dz1"], axis=1, keepdims=True)
         for i in range(2, length):
             gradients["dw" + str(i)] = (1 / M) * np.dot(gradients["dz" + str(i)], cache["A" + str(i - 1)].T)
