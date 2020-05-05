@@ -1,11 +1,9 @@
-import sys
-
-from neural.activation_functions import *
-from neural.optimizers import *
-
 """
 Layer Implementations
 """
+from neural.activation_functions import *
+from neural.optimizers import Optimizer
+import numpy as np
 
 
 class Layer:
@@ -30,10 +28,11 @@ class Layer:
         assert isinstance(optimizer, Optimizer), "Optimizer has to an instance of ABC Optimizer"
         self.optimizer = optimizer
 
-    def forward_propagation(self, X, params):
+    def forward_propagation(self, X, params, M):
         """
         Propagates through the layer
 
+        :param M: Neural network batch size
         :param params: Layer's weights and biases
         :param X: Layer Input
         :return: Layer Output, Y = W.X + B
@@ -54,15 +53,19 @@ class Layer:
         raise NotImplementedError
 
 
-class DenseLayer(Layer):
+class Dense(Layer):
     """
     Fully Connected Layer, implementation of ABC Layer
     """
 
-    def __init__(self, input_size, output_size, weights_init="He"):
+    def __init__(self, input_size, output_size, weights_init="Xavier"):
         """
         Initializes weights, biases and params
 
+        :param weights_init: String to choose the desired weights initializer,
+            He-> He weight initialization(Good for Relu activation function)
+            Xavier -> Xavier weight initialization(Good for Tanh activation function)
+            Random -> Random weight initialization
         :param input_size: This layer's input size
         :param output_size: This layer's output size
         """
@@ -76,6 +79,11 @@ class DenseLayer(Layer):
         # # He weight initialization
         if weights_init == "He":
             self.params["W"] = np.random.randn(self.output_size, self.input_size) * (np.sqrt(2 / self.input_size))
+        elif weights_init == "Xavier":
+            self.params["W"] = np.random.randn(self.output_size, self.input_size) * (
+                np.sqrt(1 / (self.input_size + self.output_size)))
+        elif weights_init == "Random":
+            self.params["W"] = np.random.randn(self.output_size, self.input_size)
         # bias can be started with zero, doesn't affect much
         self.params["B"] = np.zeros((self.output_size, 1))
 
@@ -85,7 +93,7 @@ class DenseLayer(Layer):
         self.grads["rdW"] = np.zeros(self.params["W"].shape)
         self.grads["rdB"] = np.zeros(self.params["B"].shape)
 
-    def forward_propagation(self, X, params):
+    def forward_propagation(self, X, params, M):
         self.X = X
         self.Y = np.dot(params["W"], X) + params["B"]
 
@@ -120,7 +128,7 @@ class ActivationLayer(Layer):
         """
         pass
 
-    def forward_propagation(self, X, params):
+    def forward_propagation(self, X, params, M):
         self.X = X
         self.Y = self.activation(self.X, deriv=False)
         return self.Y
@@ -167,7 +175,7 @@ class Dropout(Layer):
         self.keep_prob = keep_prob
         self.D = None
 
-    def forward_propagation(self, X, params):
+    def forward_propagation(self, X, params, M):
         self.D = np.random.rand(X.shape[0],
                                 X.shape[1]) < self.keep_prob
         self.X = X
@@ -178,3 +186,37 @@ class Dropout(Layer):
         dX = dY * self.D
         dX /= self.keep_prob
         return dX
+
+
+class Flatten(Layer):
+    """
+    Flattens Input data, typically from a Convolutional model
+    into a fully connected one
+    """
+
+    def forward_propagation(self, X, params, M):
+        self.X = X
+        self.Y = X.reshape((-1, M))
+        return self.Y
+
+    def back_propagation(self, X, params, dY, M, epoch):
+        return dY.reshape(X.shape)
+
+
+class Conv2D(Layer):
+    """
+    Does a entire convolution on the input
+    """
+
+    def __init__(self, input_shape, filter_shape, num_filters):
+        super().__init__()
+        self.input_shape = input_shape
+        self.input_depth = input_shape.shape[-1]
+        self.filter_shape = filter_shape
+        self.num_filters = num_filters
+
+    def forward_propagation(self, X, params, M):
+        self.X = X
+
+    def back_propagation(self, X, params, dY, M, epoch):
+        pass

@@ -3,11 +3,9 @@ import sys
 
 from PIL import Image, ImageOps
 
-from neural import losses
-from neural.Network import Network
-from neural.datasets import loadMnist
-from neural.layers import *
 import numpy as np
+
+from neural import *
 
 (x_train, y_train), (x_test, y_test) = loadMnist()
 
@@ -19,6 +17,10 @@ def import_to_gray(img_path):
     im = np.array(im)
     im = im.reshape(784, 1) / 255.0
     return im
+
+
+def network():
+    pass
 
 
 def run_nn(args):
@@ -40,13 +42,9 @@ def run_nn(args):
     """)
 
     model = Network()
-    model.add(DenseLayer(784, 128))
-    model.add(Sigmoid())
-    model.add(Dropout(keep_prob=0.8))
-    model.add(DenseLayer(128, 128))
-    model.add(Sigmoid())
-    model.add(Dropout(keep_prob=0.8))
-    model.add(DenseLayer(128, 10))
+    model.add(Dense(784, 64, weights_init="He"))
+    model.add(Relu())
+    model.add(Dense(64, 10, weights_init="He"))
     model.add(Softmax())
 
     if args.fit:
@@ -71,15 +69,15 @@ def run_nn(args):
 
 
 def argparser():
-    argparser = argparse.ArgumentParser(description="Mnist neural network trainer")
-    argparser.add_argument("--save", type=str, help="Save network to a certain path")
-    argparser.add_argument("--evaluate", default="neural_network",
-                           type=str, help="Use if evaluation on validation dataset is required")
-    argparser.add_argument("--fit", action="store_const", const=True, help="Use in case you want to train the network")
-    argparser.add_argument("--epochs", type=int, default=500, help="Number of epochs for training")
-    argparser.add_argument("--lr", type=float, default=0.01, help="Selects learning rate value ")
-    argparser.add_argument("--mini-batch-size", type=int, default=64, help="Selects mini batch size")
-    return argparser.parse_args()
+    argp = argparse.ArgumentParser(description="Mnist neural network trainer")
+    argp.add_argument("--save", type=str, help="Save network to a certain path")
+    argp.add_argument("--evaluate", default="neural_network",
+                      type=str, help="Use if evaluation on validation dataset is required")
+    argp.add_argument("--fit", action="store_const", const=True, help="Use in case you want to train the network")
+    argp.add_argument("--epochs", type=int, default=500, help="Number of epochs for training")
+    argp.add_argument("--lr", type=float, default=0.01, help="Selects learning rate value ")
+    argp.add_argument("--mini-batch-size", type=int, default=64, help="Selects mini batch size")
+    return argp.parse_args()
 
 
 if __name__ == "__main__":

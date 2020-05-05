@@ -45,7 +45,6 @@ def calculate_batches(X, Y, mini_batch_size, shuffle=True):
 
 
 def hotOne(array, output_size):
-
     assert len(array.shape) == 2, "Input has to have shape (data,data_size)"
     Y_orig = array
     Y = np.zeros((output_size, Y_orig.shape[-1]))

@@ -1,9 +1,10 @@
 import pickle
 
 import neural
-from neural import math_utils, losses, datasets
-from neural.layers import Layer, Optimizer
 import numpy as np
+
+from neural import math_utils, losses, Optimizer, datasets
+from neural.Layers.layers import Dropout, Layer
 
 
 class Network:
@@ -43,17 +44,20 @@ class Network:
                     counter += 1
             fin.close()
 
-    def forward_propagation(self, X):
+    def forward_propagation(self, X, train_mode=True):
         """
         Forward propagation implementation
 
+        :param train_mode: boolean to disable dropout
         :param X: Input
         :return: Neural network Prediction(Yhat)
         """
-
+        M = X.shape[-1]
         output = X
         for layer in self.layers:
-            output = layer.forward_propagation(output, layer.params)
+            if not train_mode and isinstance(layer, Dropout):
+                continue
+            output = layer.forward_propagation(output, layer.params, M)
 
         return output
 
@@ -66,7 +70,7 @@ class Network:
         :param epoch: current epoch
         :return: Input Gradients
         """
-        M = Y.shape[1]
+        M = Y.shape[-1]
         grad = self.loss(YHat, Y, deriv=True)
         for layer in reversed(self.layers):
             grad = layer.back_propagation(layer.X, layer.params, grad, M, epoch)
