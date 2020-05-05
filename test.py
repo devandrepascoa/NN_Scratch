@@ -1,4 +1,5 @@
 import argparse
+import sys
 
 from PIL import Image, ImageOps
 
@@ -39,45 +40,44 @@ def run_nn(args):
     """)
 
     model = Network()
-    model.add(DenseLayer(784, 512))
-    model.add(Relu())
-    model.add(Dropout(keep_prob=0.2))
-    model.add(DenseLayer(512, 512))
-    model.add(Relu())
-    model.add(Dropout(keep_prob=0.2))
-    model.add(DenseLayer(512, 10))
+    model.add(DenseLayer(784, 128))
+    model.add(Sigmoid())
+    model.add(Dropout(keep_prob=0.8))
+    model.add(DenseLayer(128, 128))
+    model.add(Sigmoid())
+    model.add(Dropout(keep_prob=0.8))
+    model.add(DenseLayer(128, 10))
     model.add(Softmax())
 
     if args.fit:
-        optimizer = Adam()
+        optimizer = SGD(learning_rate=args.lr)
         model.compile(optimizer=optimizer, loss=losses.cross_entropy)
-        model.fit((x_train, y_train), val_dataset=(x_test, y_test), batch_size=64)
+        try:
+            model.fit((x_train, y_train), epochs=args.epochs, val_dataset=(x_test, y_test),
+                      batch_size=args.mini_batch_size)
+        except KeyboardInterrupt:
+            print("Saving neural network..")
+            model.save()
+            sys.exit()
 
-        print(model.evaluate((x_test, y_test))["accuracy"])
-
-    if args.save:
-        model.save(args.save)
-    else:
-        model.save()
+        if args.save:
+            model.save(args.save)
+        else:
+            model.save()
 
     if args.evaluate:
-        model.load()
-        print(model.evaluate((x_test, y_test))["accuracy"])
+        model.load(args.evaluate)
+        print("Model accuracy:" + str(model.evaluate((x_test, y_test))["accuracy"]))
 
 
 def argparser():
     argparser = argparse.ArgumentParser(description="Mnist neural network trainer")
     argparser.add_argument("--save", type=str, help="Save network to a certain path")
-    argparser.add_argument("--evaluate",
+    argparser.add_argument("--evaluate", default="neural_network",
                            type=str, help="Use if evaluation on validation dataset is required")
     argparser.add_argument("--fit", action="store_const", const=True, help="Use in case you want to train the network")
-    argparser.add_argument("--epochs", type=int, default=5000, help="Number of epochs for training")
-    argparser.add_argument("--optimizer", default="gd", type=str,
-                           help="Optimizer choice: momentum-> Gradient Descent with momentum\n"
-                                "rms->Root Mean Squared Prop\n"
-                                "adam->Adam optimizer \n"
-                                "gd->Gradient descent")
-    argparser.add_argument("--learning-rate", type=float, default=0.01, help="Selects learning rate value ")
+    argparser.add_argument("--epochs", type=int, default=500, help="Number of epochs for training")
+    argparser.add_argument("--lr", type=float, default=0.01, help="Selects learning rate value ")
     argparser.add_argument("--mini-batch-size", type=int, default=64, help="Selects mini batch size")
     return argparser.parse_args()
 

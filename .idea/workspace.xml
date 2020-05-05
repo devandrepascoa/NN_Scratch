@@ -208,25 +208,26 @@
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state x="661" y="345" key="com.intellij.ide.util.TipDialog/0.0.1920.1040@0.0.1920.1040" timestamp="1587252194213" />
-    <state x="719" y="245" width="538" height="623" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser" timestamp="1588579077719">
+    <state x="719" y="245" width="538" height="623" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser" timestamp="1588596934914">
       <screen x="72" y="27" width="1848" height="1053" />
     </state>
-    <state x="719" y="245" width="538" height="623" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser/72.27.1848.1053@72.27.1848.1053" timestamp="1588579077719" />
-    <state x="700" y="146" width="588" height="815" key="find.popup" timestamp="1587521464184">
-      <screen x="67" y="27" width="1853" height="1053" />
+    <state x="719" y="245" width="538" height="623" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser/72.27.1848.1053@72.27.1848.1053" timestamp="1588596934914" />
+    <state x="703" y="146" width="588" height="815" key="find.popup" timestamp="1588595698352">
+      <screen x="72" y="27" width="1848" height="1053" />
     </state>
     <state x="656" y="118" width="607" height="804" key="find.popup/0.0.1920.1040@0.0.1920.1040" timestamp="1586278463686" />
     <state x="700" y="146" width="588" height="815" key="find.popup/67.27.1853.1053@67.27.1853.1053" timestamp="1587521464184" />
-    <state x="828" y="326" width="325" height="462" key="refactoring.ChangeSignatureDialog" timestamp="1588564741031">
+    <state x="703" y="146" width="588" height="815" key="find.popup/72.27.1848.1053@72.27.1848.1053" timestamp="1588595698352" />
+    <state x="828" y="326" width="325" height="462" key="refactoring.ChangeSignatureDialog" timestamp="1588657144239">
       <screen x="72" y="27" width="1848" height="1053" />
     </state>
-    <state x="828" y="326" width="325" height="462" key="refactoring.ChangeSignatureDialog/72.27.1848.1053@72.27.1848.1053" timestamp="1588564741031" />
-    <state x="671" y="255" width="672" height="687" key="search.everywhere.popup" timestamp="1588568116882">
+    <state x="828" y="326" width="325" height="462" key="refactoring.ChangeSignatureDialog/72.27.1848.1053@72.27.1848.1053" timestamp="1588657144239" />
+    <state x="671" y="255" width="672" height="687" key="search.everywhere.popup" timestamp="1588657120040">
       <screen x="72" y="27" width="1848" height="1053" />
     </state>
     <state x="623" y="225" width="672" height="678" key="search.everywhere.popup/0.0.1920.1040@0.0.1920.1040" timestamp="1586301305841" />
     <state x="668" y="255" width="672" height="687" key="search.everywhere.popup/67.27.1853.1053@67.27.1853.1053" timestamp="1587522364660" />
-    <state x="671" y="255" width="672" height="687" key="search.everywhere.popup/72.27.1848.1053@72.27.1848.1053" timestamp="1588568116882" />
+    <state x="671" y="255" width="672" height="687" key="search.everywhere.popup/72.27.1848.1053@72.27.1848.1053" timestamp="1588657120040" />
     <state x="718" y="445" width="540" height="216" key="vcs.readOnlyHandler.ReadOnlyStatusDialog" timestamp="1587522309664">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>

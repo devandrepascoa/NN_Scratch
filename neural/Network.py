@@ -1,5 +1,9 @@
-from neural import math_utils, losses
+import pickle
+
+import neural
+from neural import math_utils, losses, datasets
 from neural.layers import Layer, Optimizer
+import numpy as np
 
 
 class Network:
@@ -13,6 +17,32 @@ class Network:
         self.optimizer = None
         self.input_size = None
 
+    def save(self, path="neural_network"):
+        params = []
+        for layer in self.layers:
+            if layer.is_weighted:
+                params.append(layer.params)
+        params = np.array(params)
+        with open(path, 'wb') as fout:
+            save_dic = {"params": params, "version": neural.__version__}
+            pickle.dump(save_dic, fout)
+            fout.close()
+
+    def load(self, path="neural_network"):
+        with open(path, 'rb') as fin:
+            saved_dic = pickle.load(fin)
+            # Validations
+            assert neural.__version__ == saved_dic[
+                "version"], "Incompatible version\nCurrent version: " + neural.__version__ + \
+                            "\nLoaded version: " + saved_dic["version"]
+            params = saved_dic["params"]
+            counter = 0
+            for layer in self.layers:
+                if layer.is_weighted:
+                    layer.params = params[counter]
+                    counter += 1
+            fin.close()
+
     def forward_propagation(self, X):
         """
         Forward propagation implementation
@@ -20,9 +50,11 @@ class Network:
         :param X: Input
         :return: Neural network Prediction(Yhat)
         """
+
         output = X
         for layer in self.layers:
-            output = layer.forward_propagation(output)
+            output = layer.forward_propagation(output, layer.params)
+
         return output
 
     def back_propagation(self, YHat, Y, epoch):
@@ -37,7 +69,7 @@ class Network:
         M = Y.shape[1]
         grad = self.loss(YHat, Y, deriv=True)
         for layer in reversed(self.layers):
-            grad = layer.back_propagation(grad, M, epoch)
+            grad = layer.back_propagation(layer.X, layer.params, grad, M, epoch)
         return grad
 
     def add(self, layer):
@@ -114,6 +146,18 @@ class Network:
         if val_enabled:
             x_test, y_test = val_dataset
 
+        X_test, Y_test = None, None
+        assert len(x_train.shape) == 2
+        assert len(y_train.shape) == 2
+        if val_enabled:
+            (X_test, Y_test) = val_dataset
+            assert len(X_test.shape) == 2, "Incorrect data shape"
+            assert len(Y_test.shape) == 2, "Incorrect data shape"
+
+        datasets.validate_dataset(dataset, "Data set")
+        if val_enabled:
+            datasets.validate_dataset(val_dataset, "Validation set")
+
         self.input_size = self.layers[0].input_size
         # Epoch iteration
         for i in range(1, epochs):
@@ -128,7 +172,8 @@ class Network:
                 accuracy += math_utils.get_accuracy(YHat, Y)
 
                 # Backpropagation
-                grad = self.back_propagation(YHat, Y, i)
+                self.back_propagation(YHat, Y, i)
+
                 counter += 1
             cost /= counter
             accuracy /= counter

@@ -22,9 +22,17 @@ def relu(X, deriv=False):
         return X
 
 
+# activation function and its derivative
+def tanh(x, deriv=False):
+    if deriv:
+        return 1 - np.tanh(x) ** 2
+    else:
+        return np.tanh(x)
+
+
 def softmax(X, deriv=False):
     if deriv:
         return softmax(X) * (1 - softmax(X))
     else:
         e_X = np.exp(X - np.max(X))
-        return e_X / np.sum(e_X, axis=0)
+        return e_X / np.sum(e_X, axis=0, keepdims=True)

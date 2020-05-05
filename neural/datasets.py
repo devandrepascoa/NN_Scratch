@@ -1,6 +1,7 @@
 from keras.datasets import cifar10, mnist
 
 from neural import math_utils
+import numpy as np
 
 
 def loadMnist():
@@ -24,3 +25,11 @@ def loadCifar10():
     y_test = math_utils.hotOne(y_test, 10)
     return (x_train, y_train), (x_test, y_test)
 
+
+def validate_dataset(dataset, name):
+    assert isinstance(dataset, tuple) and len(dataset) == 2, (
+            name + " has to be a tuple of size 2 -> (x_train,y_train)")
+    assert isinstance(dataset[0], np.ndarray) and isinstance(dataset[1], np.ndarray), (
+            name + " data has to be numpy array")
+    assert len(dataset[0].shape) == 2 and len(dataset[1].shape) == 2, (
+            name + " data has to be of shape (data_size,data) and labels (label_size,label)")
